@@ -3,7 +3,7 @@
 //! ride starts wherever the song is, and it carries on into the next song by itself.
 
 use super::PlexdioApp;
-use crate::audio::source::{AudioCache, SourceSpec};
+use crate::audio::source::SourceSpec;
 use crate::cache::db::{LibraryDb, RideScore};
 use crate::game::analysis::{Analysis, VERSION};
 use crate::game::build::Build;
@@ -455,7 +455,7 @@ impl PlexdioApp {
         let ext = spec.ext_hint().map(str::to_string);
         let source = spec.source.clone();
         let http = self.http.clone();
-        let cache = AudioCache::new(crate::paths::audio_cache_dir(), self.config.audio_cache_mb.saturating_mul(1024 * 1024), self.config.audio_cache_enabled);
+        let cache = self.audio_cache.clone();
         let ctx = ctx.clone();
         log::info!("ride: building a track for {track}");
         self.np.ride.build = Some(Build::start(

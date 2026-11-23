@@ -195,6 +195,8 @@ pub struct ViewCtx<'a> {
     pub selection: &'a mut Selection,
     /// Downloads for offline listening.
     pub offline: &'a crate::cache::offline::OfflineState,
+    /// Songs fully in the streamed-audio cache.
+    pub cached: &'a std::collections::HashSet<Id>,
 }
 
 pub fn fmt_duration(ms: u64) -> String {
@@ -450,6 +452,12 @@ pub fn track_row(ui: &mut egui::Ui, ctx: &mut ViewCtx, ids: &[Id], opts: TableOp
     if ctx.offline.has(id) {
         let dr = Rect::from_center_size(egui::pos2(rect.right() - dur_w - 34.0, cy), egui::vec2(13.0, 13.0));
         icons::paint(ui.painter(), dr, Icon::Download, theme::ACCENT.linear_multiply(0.8));
+    } else if ctx.cached.contains(&id) {
+        // In the streamed-audio cache: plays without the network until it is evicted.
+        let c = egui::pos2(rect.right() - dur_w - 34.0, cy);
+        ui.painter().circle_filled(c, 3.0, theme::TEXT_DIM);
+        let tip = ui.interact(Rect::from_center_size(c, egui::vec2(13.0, 13.0)), resp.id.with("cached"), egui::Sense::hover());
+        tip.on_hover_text("Cached");
     }
     if t.user_rating > 0.0 {
         let sr = Rect::from_center_size(egui::pos2(rect.right() - dur_w - 14.0, cy), egui::vec2(14.0, 14.0));

@@ -325,6 +325,11 @@ pub struct PlexdioApp {
     cast_pick: std::collections::BTreeSet<String>,
     /// Downloads for offline listening of the open library.
     offline_dl: crate::cache::offline::OfflineState,
+    /// Streamed-audio disk cache, shared with the engine and Ride.
+    audio_cache: AudioCache,
+    /// Songs fully in the audio cache (row markers), as of `audio_cached_gen`.
+    audio_cached: std::collections::HashSet<Id>,
+    audio_cached_gen: u64,
     downloader: Option<crate::cache::offline::Downloader>,
     /// Spectrum/waveform state for the visualiser.
     vis: super::visualiser::Visualiser,
@@ -413,6 +418,20 @@ impl PlexdioApp {
         let http = Http::new(ClientInfo::new(config.client_id.clone()));
         let tv = PlexTv::new(http.clone(), opts.plex_tv_url.as_deref());
         let config_image_mb = config.image_cache_mb;
+        let audio_cache = AudioCache::new(
+            crate::paths::audio_cache_dir(),
+            config.audio_cache_mb.saturating_mul(1024 * 1024),
+            config.audio_cache_enabled,
+        );
+        {
+            // Index what is cached and trim it to the limit, off the UI thread.
+            let cache = audio_cache.clone();
+            let _ = std::thread::Builder::new().name("audio-cache-scan".into()).spawn(move || {
+                cache.cleanup_partials();
+                cache.scan();
+                cache.enforce_limit();
+            });
+        }
         let mut app = Self {
             config,
             opts,
@@ -464,6 +483,9 @@ impl PlexdioApp {
             vis: Default::default(),
             np: Default::default(),
             offline_dl: Default::default(),
+            audio_cache,
+            audio_cached: Default::default(),
+            audio_cached_gen: u64::MAX,
             cast: None,
             cast_players: None,
             cast_pick: Default::default(),
@@ -1783,12 +1805,7 @@ impl PlexdioApp {
     /// Create the engine on first use. Doing it lazily keeps startup free of audio-device work.
     fn ensure_engine(&mut self) -> &Engine {
         if self.engine.is_none() {
-            let cache = AudioCache::new(
-                crate::paths::audio_cache_dir(),
-                self.config.audio_cache_mb.saturating_mul(1024 * 1024),
-                self.config.audio_cache_enabled,
-            );
-            cache.cleanup_partials();
+            let cache = self.audio_cache.clone();
             let cfg = EngineConfig {
                 volume: self.config.volume,
                 muted: self.config.muted,
@@ -3436,6 +3453,11 @@ impl PlexdioApp {
         let route = self.route.clone();
         let greeting = greeting();
         let now_playing = self.playback.track.as_ref().map(|t| t.id);
+        let cache_gen = self.audio_cache.generation();
+        if cache_gen != self.audio_cached_gen {
+            self.audio_cached = self.audio_cache.cached_ids();
+            self.audio_cached_gen = cache_gen;
+        }
         {
             let mut vc = ViewCtx {
                 lib,
@@ -3446,6 +3468,7 @@ impl PlexdioApp {
                 similar: &self.similar,
                 selection: &mut self.selection,
                 offline: &self.offline_dl,
+                cached: &self.audio_cached,
             };
             use super::views::{detail, library, search};
             match &route {
@@ -3892,16 +3915,14 @@ impl PlexdioApp {
             let mut v = self.config.audio_cache_enabled;
             if theme::toggle(ui, &mut v).changed() {
                 self.config.audio_cache_enabled = v;
+                self.audio_cache.set_limits(self.config.audio_cache_mb.saturating_mul(1024 * 1024), v);
                 *changed = true;
             }
         });
-        let mut audio_used = format!("{} used", human_bytes(crate::paths::dir_size(&crate::paths::audio_cache_dir())));
-        if self.engine.is_some() {
-            audio_used.push_str(" · size changes apply after a restart");
-        }
+        let audio_used = format!("{} used · least recently played songs go first", human_bytes(crate::paths::dir_size(&crate::paths::audio_cache_dir())));
         setting_row(ui, "Audio cache", Some(&audio_used), |ui| {
             if theme::secondary_button(ui, "Clear").clicked() {
-                match remove_dir_all(crate::paths::audio_cache_dir()) {
+                match self.audio_cache.clear() {
                     Ok(()) => self.banner = Some(("Audio cache cleared.".into(), false)),
                     Err(e) => self.banner = Some((format!("Could not clear the audio cache: {e}"), true)),
                 }
@@ -3911,9 +3932,15 @@ impl PlexdioApp {
             let mut mb = self.config.audio_cache_mb as f64;
             slider_value(ui, format!("{mb:.0} MB"));
             ui.spacing_mut().slider_width = 140.0;
-            if ui.add(egui::Slider::new(&mut mb, 100.0..=5000.0).step_by(100.0).show_value(false)).changed() {
+            let resp = ui.add(egui::Slider::new(&mut mb, 100.0..=5000.0).step_by(100.0).show_value(false));
+            if resp.changed() {
                 self.config.audio_cache_mb = mb as u64;
+                self.audio_cache.set_limits(self.config.audio_cache_mb.saturating_mul(1024 * 1024), self.config.audio_cache_enabled);
                 *changed = true;
+            }
+            // Trim once the slider is let go, not on every step of a drag.
+            if resp.drag_stopped() || (resp.changed() && !resp.dragged()) {
+                self.audio_cache.enforce_limit_in_background();
             }
         });
         self.ride_storage_row(ui);
@@ -3987,13 +4014,6 @@ fn setting_row(ui: &mut egui::Ui, label: &str, desc: Option<&str>, control: impl
         ui.ctx().request_repaint();
     }
     ui.add_space(6.0);
-}
-
-fn remove_dir_all(dir: std::path::PathBuf) -> std::io::Result<()> {
-    match std::fs::remove_dir_all(dir) {
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        other => other,
-    }
 }
 
 /// "1 song" / "3 songs".

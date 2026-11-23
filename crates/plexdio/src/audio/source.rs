@@ -10,8 +10,8 @@ use crate::plex::PlexError;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock, Weak};
 use std::time::{Duration, SystemTime};
 use symphonia::core::io::MediaSource;
@@ -223,21 +223,92 @@ fn write_all_at(file: &File, mut buf: &[u8], mut offset: u64) -> io::Result<()> 
     Ok(())
 }
 
-/// Disk cache for audio streams.
+/// Disk cache for audio streams. Clones share the size limit and the index of cached tracks,
+/// so the settings page and the engine see the same cache.
 #[derive(Clone, Debug)]
 pub struct AudioCache {
     dir: PathBuf,
-    max_bytes: u64,
-    enabled: bool,
+    shared: Arc<CacheShared>,
+}
+
+#[derive(Debug, Default)]
+struct CacheShared {
+    max_bytes: AtomicU64,
+    enabled: AtomicBool,
+    /// Track ids with a completed download in the cache.
+    cached: Mutex<HashSet<i64>>,
+    /// Bumped whenever `cached` changes.
+    generation: AtomicU64,
+    /// One eviction pass at a time.
+    evicting: Mutex<()>,
+}
+
+/// Track id of a cache file (`<id>_<ext>.audio` / `<id>_t320_mp3.audio`).
+fn track_id_of(path: &Path) -> Option<i64> {
+    let stem = path.file_stem()?.to_str()?;
+    stem.split('_').next()?.parse().ok()
 }
 
 impl AudioCache {
     pub fn new(dir: PathBuf, max_bytes: u64, enabled: bool) -> Self {
-        Self { dir, max_bytes, enabled }
+        let shared = CacheShared { max_bytes: AtomicU64::new(max_bytes), enabled: AtomicBool::new(enabled), ..Default::default() };
+        Self { dir, shared: Arc::new(shared) }
     }
 
     pub fn dir(&self) -> &Path {
         &self.dir
+    }
+
+    /// Change the size limit and whether new streams are kept (takes effect immediately).
+    pub fn set_limits(&self, max_bytes: u64, enabled: bool) {
+        self.shared.max_bytes.store(max_bytes, Ordering::Relaxed);
+        self.shared.enabled.store(enabled, Ordering::Relaxed);
+    }
+
+    fn enabled(&self) -> bool {
+        self.shared.enabled.load(Ordering::Relaxed)
+    }
+
+    /// Changes whenever the set of cached tracks does.
+    pub fn generation(&self) -> u64 {
+        self.shared.generation.load(Ordering::Relaxed)
+    }
+
+    /// Track ids that are fully in the cache.
+    pub fn cached_ids(&self) -> HashSet<i64> {
+        self.shared.cached.lock().map(|c| c.clone()).unwrap_or_default()
+    }
+
+    fn mark_cached(&self, path: &Path, on: bool) {
+        let Some(id) = track_id_of(path) else { return };
+        if let Ok(mut c) = self.shared.cached.lock() {
+            let changed = if on { c.insert(id) } else { c.remove(&id) };
+            if changed {
+                self.shared.generation.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+    }
+
+    /// Rebuild the index of cached tracks from the files on disk; drops markers without audio.
+    pub fn scan(&self) {
+        let mut ids = HashSet::new();
+        if let Ok(rd) = std::fs::read_dir(&self.dir) {
+            for entry in rd.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("done") {
+                    continue;
+                }
+                if path.with_extension("audio").is_file() {
+                    ids.extend(track_id_of(&path));
+                } else {
+                    let _ = std::fs::remove_file(&path);
+                }
+            }
+        }
+        if let Ok(mut c) = self.shared.cached.lock() {
+            *c = ids;
+        }
+        self.shared.generation.fetch_add(1, Ordering::Relaxed);
     }
 
     fn file_for(&self, key: &str) -> PathBuf {
@@ -273,38 +344,63 @@ impl AudioCache {
         crate::paths::dir_size(&self.dir)
     }
 
-    /// Delete the least recently used completed downloads until the cache fits `max_bytes`.
-    /// Files opened by the engine are skipped (Windows refuses to delete them anyway).
+    /// Delete the least recently played completed downloads until the cache fits the size
+    /// limit. A file's modification time is its last play (cache hits refresh it). Downloads
+    /// still in flight count towards the total but are never deleted.
     pub fn enforce_limit(&self) {
-        if !self.enabled || self.max_bytes == 0 {
+        let max_bytes = self.shared.max_bytes.load(Ordering::Relaxed);
+        if max_bytes == 0 {
             return;
         }
+        let Ok(_guard) = self.shared.evicting.lock() else { return };
         let Ok(rd) = std::fs::read_dir(&self.dir) else { return };
-        let mut entries: Vec<(SystemTime, u64, PathBuf, PathBuf)> = Vec::new();
+        let mut total: u64 = 0;
+        let mut candidates: Vec<(SystemTime, u64, PathBuf, PathBuf)> = Vec::new();
+        let live: HashSet<PathBuf> = registry()
+            .lock()
+            .map(|r| r.iter().filter(|(_, w)| w.strong_count() > 0).map(|(p, _)| p.clone()).collect())
+            .unwrap_or_default();
         for entry in rd.flatten() {
             let path = entry.path();
             if path.extension().and_then(|e| e.to_str()) != Some("audio") {
                 continue;
             }
             let Ok(meta) = entry.metadata() else { continue };
-            entries.push((meta.modified().unwrap_or(SystemTime::UNIX_EPOCH), meta.len(), path.clone(), path.with_extension("done")));
+            total += meta.len();
+            let marker = path.with_extension("done");
+            if live.contains(&path) || !marker.exists() {
+                continue;
+            }
+            candidates.push((meta.modified().unwrap_or(SystemTime::UNIX_EPOCH), meta.len(), path, marker));
         }
-        let mut total: u64 = entries.iter().map(|(_, len, _, _)| *len).sum();
-        entries.sort_by_key(|(t, _, _, _)| *t);
-        for (_, len, path, marker) in entries {
-            if total <= self.max_bytes {
+        if total <= max_bytes {
+            return;
+        }
+        candidates.sort_by_key(|(t, _, _, _)| *t);
+        let mut evicted = 0usize;
+        for (_, len, path, marker) in candidates {
+            if total <= max_bytes {
                 break;
             }
             if std::fs::remove_file(&path).is_ok() {
                 total = total.saturating_sub(len);
                 let _ = std::fs::remove_file(&marker);
+                self.mark_cached(&path, false);
+                evicted += 1;
                 log::debug!("audio cache evicted {}", path.display());
             }
         }
+        log::info!("audio cache: evicted {evicted} songs, {total} bytes left (limit {max_bytes})");
+    }
+
+    /// Run [`Self::enforce_limit`] on a background thread.
+    pub fn enforce_limit_in_background(&self) {
+        let cache = self.clone();
+        let _ = std::thread::Builder::new().name("audio-cache-evict".into()).spawn(move || cache.enforce_limit());
     }
 
     pub fn clear(&self) -> io::Result<()> {
-        match std::fs::read_dir(&self.dir) {
+        let res = match std::fs::read_dir(&self.dir) {
             Ok(rd) => {
                 for entry in rd.flatten() {
                     let _ = std::fs::remove_file(entry.path());
@@ -313,7 +409,9 @@ impl AudioCache {
             }
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
             Err(e) => Err(e),
-        }
+        };
+        self.scan();
+        res
     }
 
     /// Open a source. For HTTP this starts a download in the background and returns immediately
@@ -325,7 +423,7 @@ impl AudioCache {
                 Ok(Box::new(file))
             }
             SourceSpec::Http { url, key } => {
-                if !self.enabled {
+                if !self.enabled() {
                     return self.open_streaming(http, url, key, None);
                 }
                 self.ensure_dir().map_err(|e| format!("audio cache: {e}"))?;
@@ -424,10 +522,12 @@ impl AudioCache {
         let url = url.to_string();
         let thread_dl = dl.clone();
         let thread_path = path.clone();
+        let cache = self.clone();
         std::thread::Builder::new()
             .name("audio-download".into())
             .spawn(move || {
                 let result = download(&http, &url, &thread_dl);
+                let mut completed = false;
                 if let Err(e) = &result {
                     log::warn!("audio download failed: {e}");
                 }
@@ -438,7 +538,7 @@ impl AudioCache {
                             st.done = true;
                             log::debug!("audio download done {} ({} bytes)", thread_path.display(), st.available);
                             if !marker.as_os_str().is_empty() {
-                                let _ = File::create(&marker);
+                                completed = File::create(&marker).is_ok();
                             }
                         }
                         Err(e) => {
@@ -454,6 +554,10 @@ impl AudioCache {
                     }
                 }
                 thread_dl.wake.notify_all();
+                if completed {
+                    cache.mark_cached(&thread_path, true);
+                    cache.enforce_limit();
+                }
             })
             .map_err(|e| format!("spawn download: {e}"))?;
         Ok(Box::new(ProgressiveSource::new(dl, temp)))
@@ -733,5 +837,39 @@ mod tests {
     fn unused_hash_is_stable() {
         assert_eq!(hash_key("123"), hash_key("123"));
         assert_ne!(hash_key("123"), hash_key("124"));
+    }
+
+    #[test]
+    fn enforce_limit_evicts_least_recently_played_first() {
+        let dir = std::env::temp_dir().join(format!("plexdio-evict-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let cache = AudioCache::new(dir.clone(), 2500, true);
+        let now = SystemTime::now();
+        // 1 oldest .. 3 newest, 1000 bytes each; 4 is a partial download (no marker).
+        for (id, age) in [(1, 300u64), (2, 200), (3, 100), (4, 0)] {
+            let path = dir.join(format!("{id}_flac.audio"));
+            std::fs::write(&path, vec![0u8; 1000]).unwrap();
+            File::options().write(true).open(&path).unwrap().set_modified(now - Duration::from_secs(age)).unwrap();
+            if id != 4 {
+                File::create(path.with_extension("done")).unwrap();
+            }
+        }
+        cache.scan();
+        assert_eq!(cache.cached_ids(), HashSet::from([1, 2, 3]));
+        let g = cache.generation();
+        cache.enforce_limit();
+        // 4000 bytes against 2500: the two least recently played go, the partial stays.
+        assert!(!dir.join("1_flac.audio").exists() && !dir.join("1_flac.done").exists());
+        assert!(!dir.join("2_flac.audio").exists());
+        assert!(dir.join("3_flac.audio").exists() && dir.join("4_flac.audio").exists());
+        assert_eq!(cache.cached_ids(), HashSet::from([3]));
+        assert_ne!(cache.generation(), g);
+        cache.set_limits(1, true);
+        cache.enforce_limit();
+        assert!(!dir.join("3_flac.audio").exists() && dir.join("4_flac.audio").exists());
+        cache.clear().unwrap();
+        assert!(cache.cached_ids().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
