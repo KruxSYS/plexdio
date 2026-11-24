@@ -330,9 +330,9 @@ fn route(state: &Arc<Mutex<State>>, method: &Method, path: &str, q: &HashMap<Str
             return json_resp(200, &json!({ "id": id.parse::<i64>().unwrap_or(0), "code": pin.code, "authToken": tok, "expiresIn": 1700 }));
         }
         (Method::Get, ["auth"]) => {
-            let html = "<html><body style='font-family:sans-serif;background:#222;color:#eee'>\
+            let html = "<html><body style='font-family:sans-serif;background:#0c1016;color:#e8ecf2'>\
                 <h2>Mock Plex sign-in</h2><p>The mock auto-approves PINs after a couple of polls.</p>\
-                <p><a style='color:#e5a00d' href='/auth/approve'>Approve all pending PINs now</a></p></body></html>";
+                <p><a style='color:#22d3ee' href='/auth/approve'>Approve all pending PINs now</a></p></body></html>";
             return bytes_resp(200, "text/html", html.as_bytes().to_vec(), vec![]);
         }
         (Method::Get, ["auth", "approve"]) => {

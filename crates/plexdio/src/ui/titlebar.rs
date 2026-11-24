@@ -58,8 +58,7 @@ pub fn show(ui: &mut egui::Ui, title: &str, can_maximize: bool) -> TitleAction {
             // App mark and name on the left.
             let p = ui.painter();
             let mark = Rect::from_center_size(egui::pos2(bar.left() + 20.0, bar.center().y), egui::vec2(16.0, 16.0));
-            p.circle_filled(mark.center(), 8.0, theme::ACCENT);
-            icons::paint(p, mark.shrink(4.0), Icon::Play, theme::BAR);
+            crate::ui::brand::plexdio_mark(p, mark);
             p.text(egui::pos2(bar.left() + 36.0, bar.center().y), Align2::LEFT_CENTER, "Plexdio", FontId::proportional(13.0), theme::TEXT);
 
             // Now-playing title, centered and clipped to the space between name and buttons.

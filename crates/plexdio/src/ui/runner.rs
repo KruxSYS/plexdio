@@ -411,6 +411,7 @@ impl<A: UiApp> Runner<A> {
     fn create_gfx(&mut self, event_loop: &ActiveEventLoop) -> Result<Gfx, String> {
         let window = egui_winit::create_window(&self.ctx, event_loop, &self.options.viewport)
             .map_err(|e| format!("cannot create window: {e}"))?;
+        crate::win::apply_window_icons(&window);
         let window = Rc::new(window);
         let context = softbuffer::Context::new(window.clone()).map_err(|e| format!("softbuffer context: {e}"))?;
         let surface =

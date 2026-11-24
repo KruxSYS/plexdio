@@ -1,7 +1,7 @@
 //! Sign-in screen (Plex PIN flow) and the generic busy screen.
 
 use crate::ui::app::PlexdioApp;
-use crate::ui::icons::{self, Icon};
+use crate::ui::brand;
 use crate::ui::theme;
 use egui::{Align, Layout, RichText};
 
@@ -20,8 +20,7 @@ pub fn centered(ui: &mut egui::Ui, width: f32, add: impl FnOnce(&mut egui::Ui)) 
 
 fn logo(ui: &mut egui::Ui, size: f32) {
     let (r, _) = ui.allocate_exact_size(egui::vec2(size, size), egui::Sense::hover());
-    ui.painter().circle_filled(r.center(), size / 2.0, theme::ACCENT);
-    icons::paint(ui.painter(), r.shrink(size * 0.24), Icon::Play, egui::Color32::from_rgb(24, 24, 24));
+    brand::plexdio_mark(ui.painter(), r);
 }
 
 pub fn busy_screen(ui: &mut egui::Ui, text: &str) {
@@ -52,8 +51,10 @@ impl PlexdioApp {
             ui.add_space(16.0);
             ui.label(RichText::new("Plexdio").size(34.0).strong());
             ui.label(RichText::new("Your Plex music, light as a feather.").size(15.0).color(theme::TEXT_DIM));
-            ui.add_space(28.0);
-            theme::card().show(ui, |ui| {
+            ui.add_space(10.0);
+            brand::credit(ui, 14.0);
+            ui.add_space(24.0);
+            let card = theme::card().show(ui, |ui| {
                 ui.set_width(400.0);
                 ui.vertical_centered(|ui| {
                     if waiting {
@@ -104,6 +105,7 @@ impl PlexdioApp {
                     }
                 });
             });
+            theme::brackets(ui.painter(), card.response.rect, 12.0);
             if mock {
                 ui.add_space(12.0);
                 ui.label(RichText::new(format!("Using Plex endpoint {target}")).small().color(theme::TEXT_DIM));

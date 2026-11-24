@@ -114,8 +114,8 @@ use windows_sys::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NI
 #[cfg(windows)]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu, DispatchMessageW, GetCursorPos, GetMessageW,
-    LoadIconW, PostMessageW, PostQuitMessage, RegisterClassW, SetForegroundWindow, TrackPopupMenu, TranslateMessage,
-    CW_USEDEFAULT, HMENU, MF_SEPARATOR, MF_STRING, MSG, TPM_RETURNCMD, TPM_RIGHTBUTTON, WM_APP, WM_CLOSE, WM_COMMAND, WM_HOTKEY,
+    GetSystemMetrics, LoadIconW, LoadImageW, PostMessageW, PostQuitMessage, RegisterClassW, SetForegroundWindow, TrackPopupMenu, TranslateMessage,
+    CW_USEDEFAULT, HMENU, IMAGE_ICON, LR_SHARED, MF_SEPARATOR, SM_CXSMICON, SM_CYSMICON, MF_STRING, MSG, TPM_RETURNCMD, TPM_RIGHTBUTTON, WM_APP, WM_CLOSE, WM_COMMAND, WM_HOTKEY,
     WM_LBUTTONUP, WM_NULL, WM_RBUTTONUP, WNDCLASSW,
 };
 
@@ -264,8 +264,11 @@ fn icon_data(hwnd: HWND) -> NOTIFYICONDATAW {
     nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = TRAY_CALLBACK;
     let hinst = unsafe { GetModuleHandleW(std::ptr::null()) };
-    // Resource id 1 is the exe icon embedded by build.rs; fall back to the generic app icon.
-    let mut icon = unsafe { LoadIconW(hinst, 1 as *const u16) };
+    // Resource id 1 is the exe icon embedded by build.rs. Load it at the small-icon size so Windows
+    // uses the pixel-aligned 16/24 px frame instead of shrinking the 32 px one; LR_SHARED keeps the
+    // handle cached (this runs on every tooltip update). Fall back to the generic app icon.
+    let (w, h) = unsafe { (GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)) };
+    let mut icon = unsafe { LoadImageW(hinst, 1 as *const u16, IMAGE_ICON, w, h, LR_SHARED) };
     if icon.is_null() {
         icon = unsafe { LoadIconW(std::ptr::null_mut(), 32512 as *const u16) }; // IDI_APPLICATION
     }

@@ -16,6 +16,30 @@ pub fn hwnd_of(h: &impl HasWindowHandle) -> Option<isize> {
     }
 }
 
+/// Use the exe's icon resource (every ICO frame) for the window and taskbar icons, so Windows can
+/// pick the pixel-aligned 16/24 px frames instead of shrinking the 64 px RGBA image the window was
+/// created with. No-op on other platforms.
+pub fn apply_window_icons(window: &winit::window::Window) {
+    #[cfg(windows)]
+    {
+        use winit::platform::windows::{IconExtWindows, WindowExtWindows};
+        let scale = window.scale_factor();
+        let px = |n: f64| {
+            let s = (n * scale).round() as u32;
+            winit::dpi::PhysicalSize::new(s, s)
+        };
+        match winit::window::Icon::from_resource(1, Some(px(16.0))) {
+            Ok(icon) => window.set_window_icon(Some(icon)),
+            Err(e) => log::warn!("small window icon: {e}"),
+        }
+        match winit::window::Icon::from_resource(1, Some(px(32.0))) {
+            Ok(icon) => window.set_taskbar_icon(Some(icon)),
+            Err(e) => log::warn!("taskbar icon: {e}"),
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = window;
+}
 
 /// True when running under Wine (ntdll exports `wine_get_version`).
 pub fn is_wine() -> bool {

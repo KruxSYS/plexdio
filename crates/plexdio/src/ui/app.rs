@@ -3577,6 +3577,8 @@ impl PlexdioApp {
                     settings_card(&mut cols[1], "Downloads", |ui| self.settings_downloads(ui, &mut changed));
                     settings_card(&mut cols[1], "Storage", |ui| self.settings_storage(ui, &mut changed));
                     settings_card(&mut cols[1], "Account", |ui| self.settings_account(ui));
+                    let about = settings_card(&mut cols[1], "About", |ui| self.settings_about(ui));
+                    theme::brackets(cols[1].painter(), about, 12.0);
                 });
             } else {
                 // `set_max_width` sets the width outright (it can widen the Ui), so cap it at
@@ -3591,6 +3593,8 @@ impl PlexdioApp {
                 settings_card(ui, "Downloads", |ui| self.settings_downloads(ui, &mut changed));
                 settings_card(ui, "Storage", |ui| self.settings_storage(ui, &mut changed));
                 settings_card(ui, "Account", |ui| self.settings_account(ui));
+                let about = settings_card(ui, "About", |ui| self.settings_about(ui));
+                theme::brackets(ui.painter(), about, 12.0);
             }
         });
         if changed {
@@ -3951,17 +3955,56 @@ impl PlexdioApp {
             self.sign_out();
         }
     }
+
+    /// Product, maker, build and links (the KruxSYS credit in Settings).
+    fn settings_about(&mut self, ui: &mut egui::Ui) {
+        let mut open = None;
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            let (mark, _) = ui.allocate_exact_size(egui::vec2(56.0, 56.0), egui::Sense::hover());
+            super::brand::plexdio_mark(ui.painter(), mark);
+            ui.add_space(6.0);
+            ui.vertical(|ui| {
+                ui.label(RichText::new("Plexdio").size(20.0).strong());
+                ui.label(RichText::new("A small, native Windows music player for Plex.").color(theme::TEXT_DIM));
+                ui.add_space(2.0);
+                super::brand::credit(ui, 13.0);
+            });
+        });
+        ui.add_space(4.0);
+        setting_row(ui, "Version", None, |ui| {
+            ui.label(RichText::new(super::brand::build_line()).monospace().color(theme::TEXT_SOFT));
+        });
+        setting_row(ui, "Project page", None, |ui| {
+            if ui.link("kruxsys.com/projects/plexdio").on_hover_text(super::brand::PROJECT_URL).clicked() {
+                open = Some(super::brand::PROJECT_URL);
+            }
+        });
+        setting_row(ui, "Source code", None, |ui| {
+            if ui.link("github.com/KruxSYS/plexdio").on_hover_text(super::brand::SOURCE_URL).clicked() {
+                open = Some(super::brand::SOURCE_URL);
+            }
+        });
+        ui.add_space(10.0);
+        ui.label(RichText::new(super::brand::COPYRIGHT).small().color(theme::TEXT_DIM));
+        if let Some(url) = open {
+            if !crate::win::open_url(url) {
+                self.toast = Some(("Couldn't open the browser".into(), ui.input(|i| i.time) + 2.0));
+            }
+        }
+    }
 }
 
-/// A full-width settings card with a title.
-fn settings_card(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
-    theme::card().show(ui, |ui| {
+/// A full-width settings card with a title. Returns the card's rect.
+fn settings_card(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) -> egui::Rect {
+    let card = theme::card().show(ui, |ui| {
         ui.set_width(ui.available_width());
         ui.label(RichText::new(title).size(17.0).strong());
         ui.add_space(4.0);
         add(ui);
     });
     ui.add_space(12.0);
+    card.response.rect
 }
 
 /// Fixed-width value shown to the right of a settings slider (rows lay out right to left).
