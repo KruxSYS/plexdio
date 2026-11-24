@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" shape-rendering="crispEdges">
-  <!-- Plexdio mark, pixel-aligned for the 24 px icon frame (solid play glyph, no signal square). -->
-  <rect x="0.5" y="0.5" width="23" height="23" fill="#0c1016" stroke="#2a3442" stroke-width="1"/>
+  <!-- Plexdio mark, pixel-aligned for the 24 px icon frame (solid play glyph, no signal square). The
+       border is lighter than --line-2 so the tile still has an edge on the dark Windows taskbar. -->
+  <rect x="0.5" y="0.5" width="23" height="23" fill="#0c1016" stroke="#3a4658" stroke-width="1"/>
   <path d="M0 6V0h6v1H1v5zM24 18v6h-6v-1h5v-5z" fill="#22d3ee"/>
   <path d="M7 5v14l12-7z" fill="#e8ecf2" shape-rendering="geometricPrecision"/>
 </svg>

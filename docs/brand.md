@@ -49,7 +49,9 @@ amber in the UI would blur the rebrand, and the site only uses its amber for rel
 
 | App token | Value | How |
 |---|---|---|
-| `SELECTED` | `#0e232c` | `--signal` at 10 % over `--panel`: the site's `--signal-dim` idea, made opaque for track rows |
+| `SELECTED` | `#0e242c` | `--signal` at 10 % over `--panel`: the site's `--signal-dim` idea, made opaque for track rows. Selected rows and the active nav item also get a 2 px cyan bar on the left, so the state never relies on the faint fill alone. |
+| `ACCENT_DIM` | `#0f2b34` | `--signal-dim` (14 % cyan) composited over `--panel` |
+| icon edge | `#3a4658` | border of the 16 and 24 px icon frames only: one step lighter than `--line-2`, so the tile keeps an edge on the dark Windows taskbar (about `#1c1c1c`) |
 
 ### Not in the KruxSYS stylesheet
 
@@ -89,6 +91,15 @@ WCAG 2 contrast ratios, all at AA (4.5:1) or better for text:
 | `ERROR` `#ff8a80` | `BG` | 8.4 |
 | `ON_ERROR` `#2a0716` | `ERROR` | 8.1 |
 | `OK` `#6fdc95` | `BG` | 11.2 |
+| `TEXT` / `TEXT_DIM` / `ACCENT` | `SELECTED` `#0e242c` | 13.7 / 5.8 / 9.0 |
+| `TEXT` / `ACCENT` | `CONTROL_HOVER` `#2a3442` | 10.6 / 7.0 |
+| `TEXT` / `ACCENT` | `ACCENT_DIM` `#0f2b34` | 12.5 / 8.2 |
+
+Two pairs are below AA, so the app never uses them:
+
+- `TEXT_DIM` on `CONTROL_HOVER` is 4.47. Hovered rows and cards use `CARD_HOVER` (`#1a212c`, 5.75 with
+  `TEXT_DIM`), and `CONTROL_HOVER` only fills hovered or pressed controls whose label is `TEXT`.
+- `ON_ACCENT` on `ACCENT_DIM` is 1.3. Dim-cyan fills always carry `TEXT` or `ACCENT`.
 
 `LINE_2` on `BG` is only 1.5:1. That is fine because it is a decorative border and never carries
 information on its own.
