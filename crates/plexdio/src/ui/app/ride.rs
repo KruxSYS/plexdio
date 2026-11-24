@@ -483,7 +483,7 @@ impl PlexdioApp {
             return;
         }
         let p = ui.painter().with_clip_rect(rect);
-        let shadow = Color32::from_black_alpha(160);
+        let shadow = theme::scrim(0.65);
         let text = |pos: egui::Pos2, align: Align2, s: &str, size: f32, c: Color32| {
             p.text(pos + egui::vec2(1.5, 1.5), align, s, FontId::proportional(size), shadow);
             p.text(pos, align, s, FontId::proportional(size), c);
@@ -492,7 +492,10 @@ impl PlexdioApp {
         match (&r.session, &r.build) {
             (Some(s), _) => {
                 let ride = &s.ride;
-                text(egui::pos2(rect.left() + 28.0, top), Align2::LEFT_TOP, &group(ride.score), 30.0, Color32::WHITE);
+                // Score block on a dark panel, so it stays readable over any road or look.
+                let rows = if s.best.is_some() { 82.0 } else { 62.0 };
+                theme::hud_panel(&p, Rect::from_min_size(egui::pos2(rect.left() + 16.0, top - 10.0), egui::vec2(230.0, rows + 10.0)), 1.0);
+                text(egui::pos2(rect.left() + 28.0, top), Align2::LEFT_TOP, &group(ride.score), 30.0, theme::TEXT);
                 let mult = ride.multiplier();
                 let line = if ride.combo > 0 { format!("×{mult}   combo {}", ride.combo) } else { format!("×{mult}") };
                 text(egui::pos2(rect.left() + 30.0, top + 38.0), Align2::LEFT_TOP, &line, 15.0, if mult > 1 { theme::ACCENT } else { theme::TEXT_DIM });
@@ -538,7 +541,8 @@ impl PlexdioApp {
             }
             (None, Some(b)) => {
                 let pct = (b.progress() * 100.0).round();
-                text(rect.center(), Align2::CENTER_CENTER, &format!("Building the track… {pct:.0} %"), 20.0, Color32::WHITE);
+                theme::hud_panel(&p, Rect::from_center_size(rect.center() + egui::vec2(0.0, 14.0), egui::vec2(500.0, 84.0)), 1.0);
+                text(rect.center(), Align2::CENTER_CENTER, &format!("Building the track… {pct:.0} %"), 20.0, theme::TEXT);
                 text(rect.center() + egui::vec2(0.0, 28.0), Align2::CENTER_CENTER, "The ride starts where the song is. Steer with the mouse or ← →.", 14.0, theme::TEXT_DIM);
                 ui.ctx().request_repaint_after(std::time::Duration::from_millis(200));
             }
@@ -556,7 +560,7 @@ impl PlexdioApp {
             let age = now - at;
             if age < RESULT_SECS {
                 let a = (1.0 - ((age - RESULT_SECS + 1.0).max(0.0)) as f32).clamp(0.0, 1.0);
-                text(egui::pos2(rect.center().x, rect.top() + 70.0), Align2::CENTER_TOP, msg, 17.0, Color32::WHITE.gamma_multiply(a));
+                text(egui::pos2(rect.center().x, rect.top() + 70.0), Align2::CENTER_TOP, msg, 17.0, theme::TEXT.gamma_multiply(a));
                 ui.ctx().request_repaint_after(std::time::Duration::from_millis(100));
             }
         }
@@ -567,12 +571,15 @@ impl PlexdioApp {
 fn result_card(p: &egui::Painter, rect: Rect, c: &ResultCard, alpha: f32) {
     let size = egui::vec2(360.0, 150.0);
     let card = Rect::from_center_size(egui::pos2(rect.center().x, rect.top() + 70.0 + size.y / 2.0), size);
-    p.rect_filled(card, 12.0, Color32::from_black_alpha((190.0 * alpha) as u8));
+    p.rect(card, 0.0, theme::scrim(0.85 * alpha), egui::Stroke::new(1.0, theme::LINE_2.gamma_multiply(alpha)), egui::StrokeKind::Inside);
+    if alpha > 0.99 {
+        theme::brackets(p, card, 12.0);
+    }
     let x = card.center().x;
     let col = |c: Color32| c.gamma_multiply(alpha);
     let title = if c.title.is_empty() { "Ride complete".to_string() } else { c.title.clone() };
     p.text(egui::pos2(x, card.top() + 22.0), Align2::CENTER_CENTER, title, FontId::proportional(15.0), col(theme::TEXT_DIM));
-    p.text(egui::pos2(x, card.top() + 58.0), Align2::CENTER_CENTER, group(c.score), FontId::proportional(36.0), col(Color32::WHITE));
+    p.text(egui::pos2(x, card.top() + 58.0), Align2::CENTER_CENTER, group(c.score), FontId::proportional(36.0), col(theme::TEXT));
     let (line, accent) = match c.best_before {
         Some(b) if c.score > b => ("New personal best!".to_string(), true),
         None => ("First ride of this song".to_string(), false),

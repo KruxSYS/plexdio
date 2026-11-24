@@ -9,7 +9,7 @@ use crate::audio::engine::PlayState;
 use crate::ui::icons::{self, Icon};
 use crate::ui::retrovis::{RetroPrefs, RetroVis};
 use crate::ui::theme;
-use egui::{Align2, Color32, FontId, Rect, RichText};
+use egui::{Align2, FontId, Rect, RichText};
 
 /// Seconds the overlay stays after the last mouse move or track change, and its fade time.
 const OVERLAY_SECS: f64 = 3.0;
@@ -203,15 +203,11 @@ impl PlexdioApp {
                         self.np.fullscreen = !self.np.fullscreen;
                     }
                     ui.add_space(8.0);
-                    let ride_text = RichText::new(if ride_on { "Stop riding" } else { "Ride" }).size(13.0).color(if ride_on { Color32::BLACK } else { theme::TEXT });
-                    let fill = if ride_on { theme::ACCENT } else { Color32::from_black_alpha(140) };
-                    if ui.add(egui::Button::new(ride_text).fill(fill).corner_radius(12)).on_hover_text("Ride the song: steer with the mouse or ← → and catch the notes (G)").clicked() {
+                    if overlay_button(ui, if ride_on { "Stop riding" } else { "Ride" }, ride_on).on_hover_text("Ride the song: steer with the mouse or ← → and catch the notes (G)").clicked() {
                         toggle_ride = true;
                     }
                     ui.add_space(8.0);
-                    let auto_text = RichText::new("Auto").size(13.0).color(if auto_on { Color32::BLACK } else { theme::TEXT });
-                    let fill = if auto_on { theme::ACCENT } else { Color32::from_black_alpha(140) };
-                    if ui.add(egui::Button::new(auto_text).fill(fill).corner_radius(12)).on_hover_text("Change the look by itself (A)").clicked() {
+                    if overlay_button(ui, "Auto", auto_on).on_hover_text("Change the look by itself (A)").clicked() {
                         toggle_auto = true;
                     }
                     ui.add_space(8.0);
@@ -229,7 +225,7 @@ impl PlexdioApp {
         if preset_alpha > alpha {
             let p = ui.painter().with_clip_rect(rect);
             let pos = egui::pos2(rect.right() - 24.0, rect.top() + 30.0);
-            p.text(pos, Align2::RIGHT_CENTER, name, FontId::proportional(18.0), Color32::WHITE.gamma_multiply(preset_alpha));
+            p.text(pos, Align2::RIGHT_CENTER, name, FontId::proportional(18.0), theme::TEXT.gamma_multiply(preset_alpha));
         }
         if alpha > 0.0 {
             self.now_playing_card(ui, rect, alpha);
@@ -265,7 +261,7 @@ impl PlexdioApp {
         let p = ui.painter().with_clip_rect(rect);
         let band = Rect::from_min_max(egui::pos2(rect.left(), rect.bottom() - 150.0), rect.max);
         let mut mesh = egui::Mesh::default();
-        let (top, bottom) = (Color32::from_black_alpha(0), Color32::from_black_alpha((170.0 * alpha) as u8));
+        let (top, bottom) = (theme::scrim(0.0), theme::scrim(0.67 * alpha));
         mesh.colored_vertex(band.left_top(), top);
         mesh.colored_vertex(band.right_top(), top);
         mesh.colored_vertex(band.right_bottom(), bottom);
@@ -284,9 +280,9 @@ impl PlexdioApp {
         self.art.paint(&child, art, thumb.as_deref(), &t.album, crate::ui::art::Shape::Rounded(theme::RADIUS_U8));
         let x = art.right() + 18.0;
         let w = (rect.right() - x - 28.0).max(60.0);
-        let white = Color32::WHITE.gamma_multiply(alpha);
-        let dim = theme::TEXT_DIM.gamma_multiply(alpha);
-        crate::ui::views::common::clipped(ui, egui::pos2(x, art.top() + 30.0), &t.title, 26.0, white, w, Align2::LEFT_CENTER);
+        let text = theme::TEXT.gamma_multiply(alpha);
+        let dim = theme::TEXT_SOFT.gamma_multiply(alpha);
+        crate::ui::views::common::clipped(ui, egui::pos2(x, art.top() + 30.0), &t.title, 26.0, text, w, Align2::LEFT_CENTER);
         let sub = if t.album.is_empty() { t.artist.clone() } else { format!("{} · {}", t.artist, t.album) };
         crate::ui::views::common::clipped(ui, egui::pos2(x, art.top() + 64.0), &sub, 15.0, dim, w, Align2::LEFT_CENTER);
     }
@@ -341,4 +337,11 @@ impl PlexdioApp {
             *changed = true;
         }
     }
+}
+
+/// Text toggle over the visualiser: square, cyan with dark text when on, dark scrim when off.
+fn overlay_button(ui: &mut egui::Ui, label: &str, on: bool) -> egui::Response {
+    let text = RichText::new(label).size(13.0).color(if on { theme::ON_ACCENT } else { theme::TEXT });
+    let (fill, border) = if on { (theme::ACCENT, theme::ACCENT) } else { (theme::scrim(0.6), theme::LINE_2) };
+    ui.add(egui::Button::new(text).fill(fill).stroke(egui::Stroke::new(1.0, border)).corner_radius(theme::RADIUS_U8))
 }

@@ -52,6 +52,16 @@ pub const OK: Color32 = Color32::from_rgb(0x6f, 0xdc, 0x95);
 /// Title-bar close button hover: the Windows 11 convention, not a brand colour.
 pub const CLOSE_HOVER: Color32 = Color32::from_rgb(0xc4, 0x2b, 0x1c);
 
+/// Darkened backdrop for text over the visualiser and Ride: `SIDEBAR` at `alpha` (0..1).
+pub fn scrim(alpha: f32) -> Color32 {
+    Color32::from_rgba_unmultiplied(SIDEBAR.r(), SIDEBAR.g(), SIDEBAR.b(), (alpha.clamp(0.0, 1.0) * 255.0).round() as u8)
+}
+
+/// A square HUD panel over the visualiser or Ride: dark scrim with a thin border.
+pub fn hud_panel(painter: &egui::Painter, rect: egui::Rect, alpha: f32) {
+    painter.rect(rect, 0.0, scrim(0.72 * alpha), Stroke::new(1.0, LINE_2.gamma_multiply(alpha)), egui::StrokeKind::Inside);
+}
+
 // ---- Shape ----
 /// Corner radius of controls, rows and art. Panels and cards are square (`0`).
 pub const RADIUS: f32 = 2.0;
