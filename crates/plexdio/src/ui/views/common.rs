@@ -416,9 +416,10 @@ pub fn track_row(ui: &mut egui::Ui, ctx: &mut ViewCtx, ids: &[Id], opts: TableOp
     }
     let selected = ctx.selection.contains(list, row);
     if selected {
-        ui.painter().rect_filled(rect, 6.0, theme::SELECTED);
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::SELECTED);
+        theme::selection_marker(ui.painter(), rect);
     } else if hovered {
-        ui.painter().rect_filled(rect, 6.0, theme::CARD_HOVER);
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD_HOVER);
     }
     // Number / playing marker.
     let num = if opts.track_numbers { t.index as usize } else { row + 1 };
@@ -432,7 +433,7 @@ pub fn track_row(ui: &mut egui::Ui, ctx: &mut ViewCtx, ids: &[Id], opts: TableOp
     x += 40.0;
     if opts.art {
         let r = Rect::from_min_size(egui::pos2(x, cy - 18.0), egui::vec2(36.0, 36.0));
-        ctx.art.paint(ui, r, t.thumb.as_deref(), &t.album, Shape::Rounded(4));
+        ctx.art.paint(ui, r, t.thumb.as_deref(), &t.album, Shape::Rounded(theme::RADIUS_U8));
         x += 46.0;
     }
     let dur_w = 60.0;
@@ -497,7 +498,7 @@ fn playlist_drag(ui: &mut egui::Ui, ctx: &mut ViewCtx, playlist: Id, row: usize,
     }
     let Some(from) = ui.data(|d| d.get_temp::<usize>(id)) else { return };
     if from == row {
-        ui.painter().rect_filled(rect, 6.0, theme::CARD);
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD);
         ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
         return;
     }
@@ -578,7 +579,7 @@ pub fn selection_bar(ui: &mut egui::Ui, ctx: &mut ViewCtx, bottom: egui::Pos2) {
         .pivot(Align2::CENTER_BOTTOM)
         .fixed_pos(bottom - egui::vec2(0.0, 14.0))
         .show(ui.ctx(), |ui| {
-            egui::Frame::popup(ui.style()).corner_radius(22.0).inner_margin(egui::Margin::symmetric(16, 8)).show(ui, |ui| {
+            egui::Frame::popup(ui.style()).corner_radius(theme::RADIUS).inner_margin(egui::Margin::symmetric(16, 8)).show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 10.0;
                     ui.label(RichText::new(format!("{} selected", ids.len())).strong());
@@ -687,14 +688,11 @@ pub const CARD_H: f32 = 226.0;
 pub fn card(ui: &mut egui::Ui, art: &mut ArtCache, item: CardItem, round: bool, width: f32) -> egui::Response {
     let h = width + 54.0;
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(width, h), Sense::click());
-    if resp.hovered() {
-        ui.painter().rect_filled(rect, 8.0, theme::CARD_HOVER);
-    } else {
-        ui.painter().rect_filled(rect, 8.0, theme::CARD);
-    }
+    let (fill, border) = if resp.hovered() { (theme::CARD_HOVER, theme::LINE_2) } else { (theme::CARD, theme::LINE) };
+    ui.painter().rect(rect, 0.0, fill, egui::Stroke::new(1.0, border), egui::StrokeKind::Inside);
     let pad = 12.0;
     let art_rect = Rect::from_min_size(rect.min + egui::vec2(pad, pad), egui::vec2(width - 2.0 * pad, width - 2.0 * pad));
-    art.paint(ui, art_rect, item.thumb, item.seed, if round { Shape::Circle } else { Shape::Rounded(6) });
+    art.paint(ui, art_rect, item.thumb, item.seed, if round { Shape::Circle } else { Shape::Rounded(theme::RADIUS_U8) });
     let tx = rect.left() + pad;
     let ty = art_rect.bottom() + 16.0;
     let align = if round { Align2::CENTER_CENTER } else { Align2::LEFT_CENTER };

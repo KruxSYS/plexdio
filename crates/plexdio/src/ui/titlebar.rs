@@ -10,7 +10,6 @@ pub const HEIGHT: f32 = 32.0;
 const BUTTON_W: f32 = 46.0;
 /// Width of the invisible resize band along each window edge.
 const EDGE: f32 = 5.0;
-const CLOSE_HOVER: Color32 = Color32::from_rgb(196, 43, 28);
 
 /// What the user did in the title bar that the app has to handle itself.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,10 +88,10 @@ pub fn show(ui: &mut egui::Ui, title: &str, can_maximize: bool) -> TitleAction {
                 let resp = ui.interact(r, ui.scope_id().with(("title_btn", tip)), Sense::click()).on_hover_text(tip);
                 let hovered = resp.hovered();
                 if hovered {
-                    let fill = if glyph == Glyph::Close { CLOSE_HOVER } else { theme::CARD_HOVER };
+                    let fill = if glyph == Glyph::Close { theme::CLOSE_HOVER } else { theme::CARD_HOVER };
                     ui.painter().rect_filled(r, 0.0, fill);
                 }
-                let color = if hovered { Color32::WHITE } else { theme::TEXT_DIM };
+                let color = if hovered { theme::TEXT } else { theme::TEXT_DIM };
                 paint_glyph(ui.painter(), r.center(), glyph, color);
                 resp.clicked()
             };

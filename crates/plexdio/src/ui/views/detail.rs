@@ -22,7 +22,7 @@ struct Hero<'a> {
 fn hero(ui: &mut egui::Ui, ctx: &mut ViewCtx, h: Hero) {
     ui.horizontal(|ui| {
         let (rect, _) = ui.allocate_exact_size(egui::vec2(180.0, 180.0), egui::Sense::hover());
-        ctx.art.paint(ui, rect, h.thumb, h.seed, if h.round { Shape::Circle } else { Shape::Rounded(8) });
+        ctx.art.paint(ui, rect, h.thumb, h.seed, if h.round { Shape::Circle } else { Shape::Rounded(theme::RADIUS_U8) });
         ui.add_space(18.0);
         ui.vertical(|ui| {
             ui.add_space(40.0);

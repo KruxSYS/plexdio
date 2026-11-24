@@ -3,7 +3,7 @@
 
 use crate::audio::eq::{response_db, BANDS, BAND_COUNT, MAX_DB};
 use crate::ui::theme;
-use egui::{pos2, vec2, Align2, Color32, FontId, Rect, Sense, Shape, Stroke};
+use egui::{pos2, vec2, Align2, FontId, Rect, Sense, Shape, Stroke};
 
 /// What happened in the editor this frame.
 #[derive(Default)]
@@ -56,7 +56,7 @@ pub fn show(ui: &mut egui::Ui, gains: &mut [f32; BAND_COUNT]) -> EqEdit {
         let strong = db == 0.0;
         p.line_segment(
             [pos2(plot.left(), y), pos2(plot.right(), y)],
-            Stroke::new(1.0, if strong { Color32::from_rgb(70, 70, 70) } else { Color32::from_rgb(44, 44, 44) }),
+            Stroke::new(1.0, if strong { theme::LINE_2 } else { theme::LINE }),
         );
         let label = if db > 0.0 { format!("+{db:.0} dB") } else { format!("{db:.0} dB") };
         p.text(pos2(plot.left() - 8.0, y), Align2::RIGHT_CENTER, label, FontId::proportional(11.0), theme::TEXT_DIM);
@@ -120,7 +120,7 @@ pub fn show(ui: &mut egui::Ui, gains: &mut [f32; BAND_COUNT]) -> EqEdit {
     for (i, &g) in gains.iter().enumerate() {
         let c = pos2(x_of(plot, BANDS[i]), y_of(plot, g));
         let hot = active == Some(i) && enabled;
-        p.circle_filled(c, if hot { 7.0 } else { 5.5 }, if hot { Color32::WHITE } else { accent });
+        p.circle_filled(c, if hot { 7.0 } else { 5.5 }, if hot { theme::ACCENT_HOVER } else { accent });
         if hot {
             let label = if g > 0.0 { format!("+{g:.1} dB") } else { format!("{g:.1} dB") };
             p.text(pos2(c.x, c.y - 16.0), Align2::CENTER_CENTER, label, FontId::proportional(12.0), theme::TEXT);

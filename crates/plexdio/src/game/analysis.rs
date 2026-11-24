@@ -369,8 +369,8 @@ pub fn analyse(samples: &[f32], ai: Option<&AiBeats>) -> Analysis {
     let n = f.rms_db.len();
 
     let mut onsets = Vec::new();
-    for b in 0..3 {
-        pick_onsets(&f.flux[b], b as u8, &mut onsets);
+    for (b, flux) in f.flux.iter().enumerate().take(3) {
+        pick_onsets(flux, b as u8, &mut onsets);
     }
     onsets.sort_by(|a, b| a.t.total_cmp(&b.t));
 

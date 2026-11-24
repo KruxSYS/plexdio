@@ -65,7 +65,7 @@ impl PlexdioApp {
                                     if c.relay { "Relay" } else if c.local { "Local" } else { "Remote" },
                                     c.latency_ms
                                 ),
-                                Color32::from_rgb(110, 200, 120),
+                                theme::OK,
                             ),
                             ProbeStatus::Failed(e) => (format!("Unavailable: {e}"), theme::ERROR),
                         };
@@ -130,15 +130,15 @@ impl PlexdioApp {
 fn row(ui: &mut egui::Ui, selected: bool, title: &str, sub: &str, sub_color: Color32) -> egui::Response {
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 58.0), Sense::click());
     let fill = if selected {
-        theme::CARD_HOVER
+        theme::SELECTED
     } else if resp.hovered() {
-        theme::CARD
+        theme::CARD_HOVER
     } else {
         Color32::TRANSPARENT
     };
-    ui.painter().rect_filled(rect, 8.0, fill);
+    ui.painter().rect_filled(rect, theme::RADIUS, fill);
     if selected {
-        ui.painter().rect_filled(egui::Rect::from_min_size(rect.min, egui::vec2(3.0, rect.height())), 2.0, theme::ACCENT);
+        theme::selection_marker(ui.painter(), rect);
     }
     let p = ui.painter();
     // Truncated to the row so long text (e.g. an "Unavailable: …" error) can't run into the

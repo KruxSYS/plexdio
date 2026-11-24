@@ -913,7 +913,7 @@ impl PlexdioApp {
             .anchor(egui::Align2::CENTER_TOP, egui::vec2(0.0, 56.0))
             .interactable(false)
             .show(ctx, |ui| {
-                egui::Frame::popup(ui.style()).corner_radius(18.0).inner_margin(egui::Margin::symmetric(16, 8)).show(ui, |ui| {
+                egui::Frame::popup(ui.style()).corner_radius(theme::RADIUS).inner_margin(egui::Margin::symmetric(16, 8)).show(ui, |ui| {
                     ui.label(RichText::new(text).strong());
                 });
             });
@@ -1024,9 +1024,9 @@ impl PlexdioApp {
             ui.add_space(10.0);
             let (rect, _) = ui.allocate_exact_size(egui::vec2(64.0, 64.0), egui::Sense::hover());
             match &track {
-                Some(t) => self.art.paint(ui, rect, thumb.as_deref(), &t.title, super::art::Shape::Rounded(6)),
+                Some(t) => self.art.paint(ui, rect, thumb.as_deref(), &t.title, super::art::Shape::Rounded(theme::RADIUS_U8)),
                 None => {
-                    ui.painter().rect_filled(rect, 6.0, theme::CARD_HOVER);
+                    ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD_HOVER);
                 }
             }
             ui.add_space(10.0);
@@ -1394,10 +1394,10 @@ impl PlexdioApp {
         let lib = self.section.as_ref().and_then(|s| s.title.clone()).unwrap_or_default();
         // Icon tile, library over server name, and a chevron that hints at the picker.
         let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 48.0), egui::Sense::click());
-        let fill = if resp.hovered() { egui::Color32::from_rgb(32, 32, 32) } else { egui::Color32::from_rgb(20, 20, 20) };
-        ui.painter().rect_filled(rect, 8.0, fill);
+        let (fill, border) = if resp.hovered() { (theme::CARD_HOVER, theme::ACCENT) } else { (theme::CARD, theme::LINE_2) };
+        ui.painter().rect(rect, theme::RADIUS, fill, egui::Stroke::new(1.0, border), egui::StrokeKind::Inside);
         let tile = egui::Rect::from_center_size(egui::pos2(rect.left() + 24.0, rect.center().y), egui::vec2(32.0, 32.0));
-        ui.painter().rect_filled(tile, 6.0, theme::ACCENT.linear_multiply(0.18));
+        ui.painter().rect(tile, theme::RADIUS, theme::ACCENT_DIM, egui::Stroke::new(1.0, theme::LINE_2), egui::StrokeKind::Inside);
         icons::paint(ui.painter(), tile.shrink(7.0), Icon::Library, theme::ACCENT);
         let text_x = tile.right() + 10.0;
         let text_w = (rect.right() - 26.0 - text_x).max(20.0);
@@ -2228,7 +2228,7 @@ impl PlexdioApp {
         ui.horizontal(|ui| {
             let n = self.cast_pick.len();
             let same = casting.as_ref() == Some(&self.cast_pick);
-            if ui.add_enabled(n > 0 && !same, egui::Button::new(if n > 1 { format!("Play on {n} players") } else { "Play there".to_string() }).corner_radius(14.0)).clicked() {
+            if ui.add_enabled(n > 0 && !same, egui::Button::new(if n > 1 { format!("Play on {n} players") } else { "Play there".to_string() }).corner_radius(theme::RADIUS)).clicked() {
                 self.start_cast();
                 ui.close();
             }
@@ -2648,7 +2648,7 @@ impl PlexdioApp {
             RemoveDownloads,
         }
         let mut out = Out::Keep;
-        let frame = egui::Frame::popup(&ctx.global_style()).inner_margin(egui::Margin::same(20)).corner_radius(10.0);
+        let frame = egui::Frame::popup(&ctx.global_style()).inner_margin(egui::Margin::same(20)).corner_radius(theme::RADIUS);
         let modal = egui::Modal::new(egui::Id::unique("dialog")).frame(frame).show(ctx, |ui| {
             ui.set_width(380.0);
             ui.spacing_mut().item_spacing.y = 10.0;
@@ -2693,7 +2693,7 @@ impl PlexdioApp {
                         egui::ScrollArea::vertical().max_height(520.0).show(ui, |ui| track_info(ui, lib, *id, details, stream, *local_plays));
                     }
                     ui.add_space(6.0);
-                    if ui.add(egui::Button::new("Close").corner_radius(14.0)).clicked() || enter {
+                    if ui.add(egui::Button::new("Close").corner_radius(theme::RADIUS)).clicked() || enter {
                         out = Out::Close;
                     }
                 }
@@ -2832,7 +2832,7 @@ impl PlexdioApp {
                     ui.painter().image(id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
                 }
                 None => {
-                    ui.painter().rect_filled(rect, 4.0, theme::CARD_HOVER);
+                    ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD_HOVER);
                 }
             }
             // Reserve a fixed slot for the title block so the transport controls never shift
@@ -3305,16 +3305,10 @@ impl PlexdioApp {
                 let dragging_over = self.queue_drag.is_some_and(|from| from != ord)
                     && ui.ctx().pointer_latest_pos().is_some_and(|p| rect.contains(p));
                 if entry.current {
-                    ui.painter().rect_filled(rect, 6.0, theme::CARD);
-                    let bar = egui::Rect::from_min_size(
-                        egui::pos2(rect.left() + 2.0, rect.top() + 8.0),
-                        egui::vec2(3.0, rect.height() - 16.0),
-                    );
-                    ui.painter().rect_filled(bar, 1.5, theme::ACCENT);
-                } else if dragging_over {
-                    ui.painter().rect_filled(rect, 6.0, theme::CARD_HOVER);
-                } else if resp.hovered() {
-                    ui.painter().rect_filled(rect, 6.0, theme::CARD);
+                    ui.painter().rect_filled(rect, theme::RADIUS, theme::SELECTED);
+                    theme::selection_marker(ui.painter(), rect);
+                } else if dragging_over || resp.hovered() {
+                    ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD_HOVER);
                 }
                 if resp.drag_started() {
                     drag_started = Some(ord);
@@ -4163,16 +4157,16 @@ fn name_field(ui: &mut egui::Ui, text: &mut String, hint: &str) {
 /// Confirm / Cancel row of a dialog; Enter confirms when `ok`.
 fn dialog_buttons<T>(ui: &mut egui::Ui, confirm: &str, ok: bool, out: &mut T, cancel: T, on_ok: impl FnOnce() -> T, enter: bool) {
     // Destructive actions get a red button.
-    let (fill, text) = if confirm == "Delete" { (theme::ERROR, egui::Color32::WHITE) } else { (theme::ACCENT, egui::Color32::from_rgb(24, 24, 24)) };
+    let (fill, text) = if confirm == "Delete" { (theme::ERROR, theme::ON_ERROR) } else { (theme::ACCENT, theme::ON_ACCENT) };
     let mut confirmed = false;
     let mut cancelled = false;
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        let b = egui::Button::new(RichText::new(confirm).color(text).strong()).fill(fill).corner_radius(14.0);
+        let b = egui::Button::new(RichText::new(confirm).color(text).strong()).fill(fill).stroke(egui::Stroke::new(1.0, fill)).corner_radius(theme::RADIUS);
         if ui.add_enabled(ok, b).clicked() {
             confirmed = true;
         }
-        if ui.add(egui::Button::new("Cancel").corner_radius(14.0)).clicked() {
+        if ui.add(egui::Button::new("Cancel").corner_radius(theme::RADIUS)).clicked() {
             cancelled = true;
         }
     });
@@ -4196,7 +4190,7 @@ fn min_h(zoom: f32) -> u32 {
 fn account_row(ui: &mut egui::Ui, name: &str) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 38.0), egui::Sense::hover());
     let center = egui::pos2(rect.left() + 22.0, rect.center().y);
-    ui.painter().circle_filled(center, 12.0, theme::ACCENT.linear_multiply(0.18));
+    ui.painter().rect_filled(egui::Rect::from_center_size(center, egui::vec2(24.0, 24.0)), theme::RADIUS, theme::ACCENT_DIM);
     let initial: String = name.chars().next().map(|c| c.to_uppercase().collect()).unwrap_or_default();
     ui.painter().text(center, egui::Align2::CENTER_CENTER, initial, egui::FontId::proportional(12.5), theme::ACCENT);
     let x = rect.left() + 44.0;
@@ -4205,9 +4199,11 @@ fn account_row(ui: &mut egui::Ui, name: &str) {
 
 fn nav_button(ui: &mut egui::Ui, selected: bool, icon: Icon, label: &str) -> bool {
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 38.0), egui::Sense::click());
-    if selected || resp.hovered() {
-        let fill = if selected { egui::Color32::from_rgb(36, 36, 36) } else { egui::Color32::from_rgb(24, 24, 24) };
-        ui.painter().rect_filled(rect, 6.0, fill);
+    if selected {
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::SELECTED);
+        theme::selection_marker(ui.painter(), rect);
+    } else if resp.hovered() {
+        ui.painter().rect_filled(rect, theme::RADIUS, theme::CARD);
     }
     let color = if selected || resp.hovered() { theme::TEXT } else { theme::TEXT_DIM };
     let icon_rect = egui::Rect::from_center_size(egui::pos2(rect.left() + 22.0, rect.center().y), egui::vec2(22.0, 22.0));

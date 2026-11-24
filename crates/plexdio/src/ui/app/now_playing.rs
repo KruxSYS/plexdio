@@ -281,7 +281,7 @@ impl PlexdioApp {
         let art = Rect::from_min_size(egui::pos2(rect.left() + 28.0, rect.bottom() - 124.0), egui::vec2(96.0, 96.0));
         let mut child = ui.new_child(egui::UiBuilder::new().max_rect(art));
         child.multiply_opacity(alpha);
-        self.art.paint(&child, art, thumb.as_deref(), &t.album, crate::ui::art::Shape::Rounded(6));
+        self.art.paint(&child, art, thumb.as_deref(), &t.album, crate::ui::art::Shape::Rounded(theme::RADIUS_U8));
         let x = art.right() + 18.0;
         let w = (rect.right() - x - 28.0).max(60.0);
         let white = Color32::WHITE.gamma_multiply(alpha);

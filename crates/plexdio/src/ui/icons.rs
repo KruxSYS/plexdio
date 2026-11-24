@@ -275,7 +275,7 @@ pub fn button(ui: &mut Ui, icon: Icon, size: f32, active: bool) -> Response {
     let color = if active {
         super::theme::ACCENT
     } else if resp.hovered() {
-        Color32::WHITE
+        super::theme::TEXT
     } else {
         super::theme::TEXT_DIM
     };
@@ -283,12 +283,12 @@ pub fn button(ui: &mut Ui, icon: Icon, size: f32, active: bool) -> Response {
     resp
 }
 
-/// Round filled button (used for the big play/pause control).
+/// Round accent-filled button (the big play/pause control).
 pub fn round_button(ui: &mut Ui, icon: Icon, size: f32) -> Response {
     let (rect, resp) = ui.allocate_exact_size(vec2(size, size), Sense::click());
-    let bg = if resp.hovered() { Color32::WHITE } else { Color32::from_rgb(235, 235, 235) };
+    let bg = if resp.hovered() { super::theme::ACCENT_HOVER } else { super::theme::ACCENT };
     let r = if resp.is_pointer_button_down_on() { size * 0.47 } else { size * 0.5 };
     ui.painter().circle_filled(rect.center(), r, bg);
-    paint(ui.painter(), rect.shrink(size * 0.27), icon, Color32::BLACK);
+    paint(ui.painter(), rect.shrink(size * 0.27), icon, super::theme::ON_ACCENT);
     resp
 }

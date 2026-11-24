@@ -210,7 +210,7 @@ impl SearchState {
 
 /// Accent outline around the keyboard-highlighted result, scrolled into view.
 fn mark(r: &egui::Response) {
-    r.ctx.layer_painter(r.layer_id).rect_stroke(r.rect.expand(2.0), 10.0, egui::Stroke::new(2.0, theme::ACCENT), egui::StrokeKind::Outside);
+    r.ctx.layer_painter(r.layer_id).rect_stroke(r.rect.expand(2.0), 0.0, egui::Stroke::new(2.0, theme::ACCENT), egui::StrokeKind::Outside);
     r.scroll_to_me(None);
 }
 
@@ -256,16 +256,18 @@ fn top_card(ui: &mut egui::Ui, ctx: &mut ViewCtx, hit: Hit, tracks: &[Id], marke
         },
     };
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width().min(440.0), 200.0), egui::Sense::click());
-    ui.painter().rect_filled(rect, 10.0, if resp.hovered() { theme::CARD_HOVER } else { theme::CARD });
+    ui.painter().rect_filled(rect, 0.0, if resp.hovered() { theme::CARD_HOVER } else { theme::CARD });
+    theme::card_border(ui.painter(), rect);
     let art = egui::Rect::from_min_size(rect.min + egui::vec2(18.0, 18.0), egui::vec2(96.0, 96.0));
-    ctx.art.paint(ui, art, thumb, title, if round { crate::ui::art::Shape::Circle } else { crate::ui::art::Shape::Rounded(6) });
+    ctx.art.paint(ui, art, thumb, title, if round { crate::ui::art::Shape::Circle } else { crate::ui::art::Shape::Rounded(theme::RADIUS_U8) });
     clipped(ui, egui::pos2(rect.left() + 18.0, art.bottom() + 26.0), title, 26.0, theme::TEXT, rect.width() - 36.0, egui::Align2::LEFT_CENTER);
     ui.painter().text(egui::pos2(rect.left() + 18.0, art.bottom() + 56.0), egui::Align2::LEFT_CENTER, kind, egui::FontId::proportional(13.0), theme::TEXT_DIM);
     let play_rect = egui::Rect::from_center_size(rect.right_bottom() - egui::vec2(46.0, 46.0), egui::vec2(48.0, 48.0));
     let play = ui.interact(play_rect, resp.id.with("play"), egui::Sense::click());
     if resp.hovered() || play.hovered() {
-        ui.painter().circle_filled(play_rect.center(), 24.0, theme::ACCENT);
-        crate::ui::icons::paint(ui.painter(), play_rect.shrink(14.0), crate::ui::icons::Icon::Play, egui::Color32::from_rgb(24, 24, 24));
+        let fill = if play.hovered() { theme::ACCENT_HOVER } else { theme::ACCENT };
+        ui.painter().circle_filled(play_rect.center(), 24.0, fill);
+        crate::ui::icons::paint(ui.painter(), play_rect.shrink(14.0), crate::ui::icons::Icon::Play, theme::ON_ACCENT);
     }
     if marked {
         mark(&resp);
@@ -448,7 +450,8 @@ pub fn search_view(ui: &mut egui::Ui, ctx: &mut ViewCtx, state: &mut SearchState
                         let (g, n) = &lib.genres[gi];
                         let (c1, c2) = crate::ui::art::placeholder_colors(g);
                         let (rect, r) = ui.allocate_exact_size(egui::vec2(170.0, 64.0), egui::Sense::click());
-                        ui.painter().rect_filled(rect, 10.0, if r.hovered() { c1 } else { c2 });
+                        ui.painter().rect_filled(rect, 0.0, if r.hovered() { c1 } else { c2 });
+                        theme::card_border(ui.painter(), rect);
                         ui.painter().text(rect.min + egui::vec2(12.0, 10.0), egui::Align2::LEFT_TOP, g, egui::FontId::proportional(16.0), theme::TEXT);
                         ui.painter().text(rect.left_bottom() + egui::vec2(12.0, -9.0), egui::Align2::LEFT_BOTTOM, plural(*n, "album", "albums"), egui::FontId::proportional(12.0), theme::TEXT_DIM);
                         if section_marked(Hit::Genre(gi)) {
@@ -474,7 +477,7 @@ pub fn search_view(ui: &mut egui::Ui, ctx: &mut ViewCtx, state: &mut SearchState
                 if let Some(Hit::Track(k)) = cursor.map(|c| hits[c]).filter(|h| section_marked(*h)) {
                     let y = top + k as f32 * (ROW_H + ui.spacing().item_spacing.y);
                     let r = egui::Rect::from_min_size(egui::pos2(ui.min_rect().left(), y), egui::vec2(ui.min_rect().width(), ROW_H));
-                    ui.painter().rect_stroke(r, 6.0, egui::Stroke::new(2.0, theme::ACCENT), egui::StrokeKind::Inside);
+                    ui.painter().rect_stroke(r, theme::RADIUS, egui::Stroke::new(2.0, theme::ACCENT), egui::StrokeKind::Inside);
                     ui.scroll_to_rect(r, None);
                 }
             }

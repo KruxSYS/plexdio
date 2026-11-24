@@ -341,9 +341,12 @@ impl BrowseState {
 
 fn tab_button(ui: &mut egui::Ui, current: LibTab, tab: LibTab, label: &str) -> bool {
     let sel = current == tab;
-    let text = RichText::new(label).size(14.0).color(if sel { egui::Color32::BLACK } else { theme::TEXT });
-    let fill = if sel { theme::TEXT } else { egui::Color32::from_rgb(42, 42, 42) };
-    ui.add(egui::Button::new(text).fill(fill).corner_radius(16).min_size(egui::vec2(70.0, 30.0))).clicked()
+    let text = RichText::new(label).size(14.0).color(if sel { theme::ACCENT } else { theme::TEXT });
+    let mut button = egui::Button::new(text).corner_radius(theme::RADIUS_U8).min_size(egui::vec2(70.0, 30.0));
+    if sel {
+        button = button.fill(theme::ACCENT_DIM).stroke(egui::Stroke::new(1.0, theme::ACCENT));
+    }
+    ui.add(button).clicked()
 }
 
 fn filter_box(ui: &mut egui::Ui, filter: &mut String, hint: &str) {
@@ -373,11 +376,14 @@ fn sort_controls<T: PartialEq + Copy>(ui: &mut egui::Ui, salt: &str, sort: &mut 
     before != (*sort, *desc)
 }
 
-/// A pill-shaped toggle used for the filter chips.
+/// A small toggle button used for the filter chips (cyan when on).
 fn chip(ui: &mut egui::Ui, on: bool, label: &str) -> egui::Response {
-    let text = RichText::new(label).size(13.0).color(if on { egui::Color32::BLACK } else { theme::TEXT });
-    let fill = if on { theme::ACCENT } else { egui::Color32::from_rgb(42, 42, 42) };
-    ui.add(egui::Button::new(text).fill(fill).corner_radius(14).min_size(egui::vec2(0.0, 26.0)))
+    let text = RichText::new(label).size(13.0).color(if on { theme::ON_ACCENT } else { theme::TEXT });
+    let mut button = egui::Button::new(text).corner_radius(theme::RADIUS_U8).min_size(egui::vec2(0.0, 26.0));
+    if on {
+        button = button.fill(theme::ACCENT).stroke(egui::Stroke::new(1.0, theme::ACCENT));
+    }
+    ui.add(button)
 }
 
 /// Filter chips (Unplayed, Rating, Decade, Genre and Clear). `full` adds Rating and Decade
@@ -659,7 +665,12 @@ pub fn library_view(ui: &mut egui::Ui, ctx: &mut ViewCtx, state: &mut BrowseStat
                     for (g, n) in genres {
                         let (c1, c2) = crate::ui::art::placeholder_colors(g);
                         let (rect, resp) = ui.allocate_exact_size(egui::vec2(200.0, 96.0), egui::Sense::click());
-                        ui.painter().rect_filled(rect, 10.0, if resp.hovered() { c1 } else { c2 });
+                        ui.painter().rect_filled(rect, 0.0, if resp.hovered() { c1 } else { c2 });
+                        if resp.hovered() {
+                            ui.painter().rect_stroke(rect, 0.0, egui::Stroke::new(1.0, theme::ACCENT), egui::StrokeKind::Inside);
+                        } else {
+                            theme::card_border(ui.painter(), rect);
+                        }
                         ui.painter().text(rect.min + egui::vec2(14.0, 14.0), egui::Align2::LEFT_TOP, g, egui::FontId::proportional(19.0), theme::TEXT);
                         ui.painter().text(
                             rect.left_bottom() + egui::vec2(14.0, -12.0),
@@ -682,7 +693,7 @@ pub fn playlists_view(ui: &mut egui::Ui, ctx: &mut ViewCtx) {
     ui.horizontal(|ui| {
         ui.heading("Playlists");
         ui.add_space(12.0);
-        if ui.add(egui::Button::new("+  New playlist").corner_radius(14.0)).clicked() {
+        if ui.add(egui::Button::new("+  New playlist").corner_radius(theme::RADIUS)).clicked() {
             ctx.actions.push(UiAction::NewPlaylist(Vec::new()));
         }
     });
