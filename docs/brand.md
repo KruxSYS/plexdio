@@ -130,7 +130,7 @@ as they are.
 | [`assets/brand/plexdio.svg`](../assets/brand/plexdio.svg) | Plexdio logo, the master for all sizes from 32 px up |
 | [`assets/brand/plexdio-small.svg`](../assets/brand/plexdio-small.svg) | Plexdio logo, pixel-aligned variant for the 16 and 24 px icon frames |
 
-`tools/make_icons.py` renders both Plexdio SVGs into `assets/icon.ico` (16/24/32/48/64/256),
+`tools/make_icons.py` renders the Plexdio SVGs into `assets/icon.ico` (16/24/32/48/64/256),
 `assets/icon.png`, `assets/icon64.rgba` and `assets/discord-icon.png`. The in-app marks (title bar,
 login, About, credit) are drawn as vector shapes in `crates/plexdio/src/ui/brand.rs` to the same
 geometry, so they stay sharp at every zoom level.

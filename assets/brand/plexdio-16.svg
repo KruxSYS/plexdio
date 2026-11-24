@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges">
+  <!-- Plexdio mark, pixel-aligned for the 16 px icon frame (solid play glyph, no signal square). -->
+  <rect x="0.5" y="0.5" width="15" height="15" fill="#0c1016" stroke="#2a3442" stroke-width="1"/>
+  <path d="M0 4V0h4v1H1v3zM16 12v4h-4v-1h3v-3z" fill="#22d3ee"/>
+  <path d="M5 3.5v9l7.5-4.5z" fill="#e8ecf2" shape-rendering="geometricPrecision"/>
+</svg>
