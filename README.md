@@ -1,23 +1,63 @@
-# Plexdio
+<!--
+  Brand: KruxSYS palette and marks, see docs/brand.md.
+  Note for maintainers: the Plexdio logo currently served on kruxsys.com
+  (assets/img/plexdio/logo-128.*.webp) is still the old amber icon. The current logo is
+  assets/brand/plexdio.svg; the site asset should be replaced with a render of it.
+-->
+<p align="center">
+  <img src="assets/brand/plexdio.svg" width="96" height="96" alt="Plexdio logo">
+</p>
 
-A small, native Windows 10/11 x64 music player for Plex — a lean alternative to Plexamp.
-One self-contained exe (about 25 MB, most of it Ride's beat-tracking model), no installer, no
-runtime, no Electron.
+<h1 align="center">Plexdio</h1>
+
+<p align="center">
+  <a href="https://kruxsys.com/"><img src="assets/brand/kruxsys.svg" width="20" height="20" alt="" align="absmiddle"></a>
+  &nbsp;by <a href="https://kruxsys.com/"><b>KruxSYS</b></a>
+</p>
+
+<p align="center"><b>A small, native Windows music player for Plex.</b></p>
+
+<p align="center">
+  <a href="https://kruxsys.com/projects/plexdio/"><img src="https://img.shields.io/badge/status-in%20development-ffb547?style=flat-square&labelColor=0c1016" alt="Status: in development"></a>
+  <a href="https://kruxsys.com/projects/plexdio/"><img src="https://img.shields.io/badge/project%20page-kruxsys.com-22d3ee?style=flat-square&labelColor=0c1016" alt="Project page on kruxsys.com"></a>
+  <a href="https://kruxsys.com/"><img src="https://img.shields.io/badge/by-KruxSYS-22d3ee?style=flat-square&labelColor=0c1016" alt="KruxSYS"></a>
+  <a href="https://github.com/KruxSYS/plexdio/releases"><img src="https://img.shields.io/badge/download-Releases-22d3ee?style=flat-square&labelColor=0c1016" alt="Download from Releases"></a>
+  <img src="https://img.shields.io/badge/Windows%2010%20%2F%2011-x64-2a3442?style=flat-square&labelColor=0c1016" alt="Windows 10 and 11, x64">
+</p>
+
+<p align="center">
+  <a href="https://kruxsys.com/projects/plexdio/">Project page</a> ·
+  <a href="https://kruxsys.com/">kruxsys.com</a> ·
+  <a href="https://github.com/KruxSYS/plexdio/releases">Releases</a>
+</p>
+
+Plexdio is a small, native Windows 10/11 x64 music player for Plex, a lean alternative to Plexamp.
+It is one self-contained exe (about 25 MB, most of it Ride's beat-tracking model), with no
+installer, no runtime and no Electron.
 
 *Formerly **Plexify**, then briefly **PlexDio**. Settings, the library cache, the saved sign-in and the start-with-Windows
 entry carry over automatically on first start.*
+
+> **Status: in development.** Plexdio has been tested against its own mock Plex server under
+> Wine and on a Windows 11 VM. It has never talked to a real Plex server or plex.tv. Cast is
+> experimental. Real audio output has not been checked: there is no audio device in Wine or the
+> test VM. See [Status](#status) for the details.
 
 ![Home](docs/home.png)
 
 | Album | Artist |
 |---|---|
-| ![Album page with the playing track and the hover play button](docs/album.png) | ![Artist page with Discography and Fans also like](docs/artist.png) |
-| **Radio** | **Settings** |
-| ![Song radio page](docs/radio.png) | ![Settings with the equaliser](docs/settings.png) |
+| ![Album page with the playing track and the hover play button](docs/album.png) | ![Artist page with Popular songs and Discography](docs/artist.png) |
+| **Radio** | **Search** |
+| ![Song radio page](docs/radio.png) | ![Search with the Top result and its play button](docs/search.png) |
+| **Settings** | **About** |
+| ![Settings with the equaliser](docs/settings.png) | ![Settings, About: version, links and the KruxSYS credit](docs/about.png) |
 
-Mini-player:
+Sign-in and mini-player:
 
-![Mini-player](docs/mini.png)
+| | |
+|---|---|
+| ![Sign-in screen with the Plexdio logo and the KruxSYS credit](docs/login.png) | ![Mini-player](docs/mini.png) |
 
 Now playing visualiser (`V`, `F11` for full screen):
 
@@ -113,7 +153,7 @@ Sound Scope:
 - **Ride**: an Audiosurf-style game on the song that is playing, built from the song itself and
   played over the visualiser. See [Ride](#ride-the-game).
 - **Zoom**: 80–150 % (`Ctrl+=`, `Ctrl+−`, `Ctrl+0`, or Settings), remembered.
-- **Windows integration**: a themed title bar (drag, double-click to maximise, resize from any
+- **Windows integration**: an exe with the KruxSYS version information, a themed title bar (drag, double-click to maximise, resize from any
   edge, live redraw while resizing), tray icon with menu, minimise/close to tray, media keys
   (`RegisterHotKey`, plus the System Media Transport Controls media overlay with metadata,
   status and seek timeline), start with Windows, a compact always-on-top mini-player (no
@@ -124,7 +164,12 @@ Sound Scope:
 - **Settings**, as cards of rows with switches: streaming quality (original or a bitrate cap
   via the transcoder), crossfade, normalisation, autoplay, the equaliser, window behaviour,
   Discord, zoom, visualiser, downloads, image and audio cache sizes with usage and clear
-  buttons, account/sign-out. Two columns on wide windows, one on narrow ones.
+  buttons, account/sign-out, and **About** (version and build, links to the project page and
+  the source). Two columns on wide windows, one on narrow ones.
+- **Look**: the KruxSYS style, with dark navy panels, thin blue-grey lines, a cyan accent and
+  square corners. [docs/brand.md](docs/brand.md) lists every colour, where it comes from and
+  the contrast checks; `tools/make_icons.py` renders the icons from
+  [`assets/brand/plexdio.svg`](assets/brand/plexdio.svg).
 
 ### Equaliser
 
@@ -225,8 +270,10 @@ Ride in a hover ship, a car or a plane:
 
 ## Status
 
-Tested against **mockplex**, the mock Plex server in this repository, under Wine and on a
-real Windows 11 VM. **It has never talked to a real Plex server or plex.tv.**
+**In development.** Tested against **mockplex**, the mock Plex server in this repository, under
+Wine and on a real Windows 11 VM. **It has never talked to a real Plex server or plex.tv.** Cast
+is experimental, and real audio output has not been checked (there is no audio device in Wine or
+the test VM).
 
 | Area | Verified |
 |---|---|
@@ -248,7 +295,7 @@ real Windows 11 VM. **It has never talked to a real Plex server or plex.tv.**
 | Ride (analysis, AI beats, maps, steering, scores, carry-on, settings) | ✅ unit tests on synthetic drums, preview tool on real songs, Linux build + Windows 11 VM against the mock (60 fps; Beat This! ~2 % of song length) |
 | Now playing visualiser (9 looks, full screen, pause fade) | ✅ unit tests, preview tool, Linux build, Windows 11 VM full screen (~26 fps, ~24 % of a core) |
 | Discord Rich Presence protocol | ✅ test against a fake Discord socket; Wine (no Discord → retries quietly) |
-| Themed title bar, mini-player, settings layout | ✅ Wine screenshots |
+| Themed title bar, mini-player, settings layout, KruxSYS look | ✅ Wine screenshots; Windows 11 VM (every page, tray and taskbar icons on light and dark taskbars, exe version info) |
 | Off-screen window rescue (display change, sleep) | ✅ unit tests + Windows 11 VM (window pushed to 5000,5000 came back in 3 s) |
 | Settings persistence, tray, media keys, shortcuts | ✅ Wine |
 | SMTC overlay (metadata, status, timeline, buttons) | ✅ Windows 11 VM |
@@ -301,6 +348,7 @@ test runs), `PLEXDIO_LOG` (`error`…`trace`), `PLEXDIO_PLEX_TV_URL`,
 ```
 crates/plexdio
   main.rs            single instance, logging, config, launch, Plexify migration
+  build.rs           exe icon and version info (KruxSYS), build hash/date for About
   config.rs          %APPDATA%\Plexdio\config.json
   secure_store.rs    Credential Manager -> DPAPI file fallback
   logging.rs         rotating file log (1 MB x 3)
@@ -316,7 +364,8 @@ crates/plexdio
                      sample tap for the visualiser
   player/            mixes, radio, similar artists, reporting, session resume, lyrics
                      parser, cast sessions
-  ui/                CPU-rendered egui: runner, app state, views, title bar, EQ editor,
+  ui/                CPU-rendered egui: runner, app state, views, title bar, theme (KruxSYS
+                     tokens), brand marks (vector Plexdio/KruxSYS logos), EQ editor,
                      icons, artwork cache, visualiser (FFT), retrovis/ (Now playing
                      visualiser: canvas, feedback warps, palettes, analysis, 3D, presets),
                      app/ride.rs (Ride mode on the Now playing page)
@@ -325,7 +374,9 @@ crates/plexdio
   win/               tray + media keys, SMTC, autostart, single instance, Wine workarounds
 crates/mockplex      mock plex.tv + Plex Media Server (tiny_http), including playlist writes,
                      lyric streams and fake remote-controllable players
+assets/brand         Plexdio and KruxSYS logos (SVG); the icons are rendered from them
 assets/models        Ride's beat model (ONNX, embedded; see its README)
+tools/make_icons.py  regenerates assets/icon.ico, icon.png, icon64.rgba, discord-icon.png
 ```
 
 Notable choices:
@@ -350,7 +401,7 @@ exe), `…\logs\plexdio.log`.
 
 ## Footprint
 
-Release exe: **25 905 152 bytes (24.7 MiB)**, PE32+ x86-64, system DLLs only. About 11 MB of
+Release exe: **25 989 120 bytes (24.8 MiB)**, PE32+ x86-64, system DLLs only. About 11 MB of
 that is Ride's beat model and 3 MB its runtime (rten); the player itself is about 10 MB. The model
 is unpacked once into `…\models` on first use.
 
@@ -398,8 +449,9 @@ The app runs under Wine with two adaptations, both in `src/win/`:
   work through `RegisterHotKey`.
 
 With Wine's default settings the X11 window manager still draws its own frame over the top
-of the window, covering Plexdio's title bar. To see the app as it looks on Windows (the
-screenshots above were taken this way), turn that off:
+of the window, covering Plexdio's title bar. To see the app as it looks on Windows, turn that
+off (the screenshots above come from the Linux build against the mock server, which draws the
+same frame):
 
 ```sh
 wine reg add "HKCU\Software\Wine\X11 Driver" /v Decorated /t REG_SZ /d N /f
@@ -412,7 +464,7 @@ memory under Wine.
 ## Testing
 
 ```sh
-cargo test --workspace                                  # 191 tests: parsing, sync, audio, EQ, queue, playlists, downloads, cast, Ride, ...
+cargo test --workspace                                  # 195 tests: parsing, sync, audio, EQ, queue, playlists, downloads, cast, Ride, ...
 cargo test --workspace --target x86_64-pc-windows-gnu   # same suite under Wine
 semgrep scan --config p/default --metrics off crates     # 0 findings
 cargo run --release -p plexdio --example retrovis_preview # renders every Now playing look to target/retrovis/*.png
@@ -429,3 +481,19 @@ and failing) and casting to the mock's fake players. Unit tests cover the equali
 bypass, band gain, drawn response), the Discord IPC exchange against a fake Discord socket,
 the LRC parser, the visualiser's FFT, the cache schema migration, selection and the library
 filters.
+
+## Other KruxSYS projects
+
+- **[Krunk](https://kruxsys.com/projects/krunk/)**: a lightweight, privacy-minded web browser for
+  Windows and Android ([krunk.kruxsys.com](https://krunk.kruxsys.com/)).
+- **[Screvia](https://kruxsys.com/projects/screvia/)**: screenshots, screen recording and sharing
+  for Windows.
+
+More at [kruxsys.com](https://kruxsys.com/).
+
+---
+
+<p align="center">
+  <a href="https://kruxsys.com/"><img src="assets/brand/kruxsys.svg" width="24" height="24" alt="KruxSYS"></a><br>
+  <sub>© 2026 KruxSYS · <a href="https://kruxsys.com/projects/plexdio/">kruxsys.com/projects/plexdio</a></sub>
+</p>
