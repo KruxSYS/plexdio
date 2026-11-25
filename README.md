@@ -21,19 +21,24 @@
   <a href="https://kruxsys.com/projects/plexdio/"><img src="https://img.shields.io/badge/status-in%20development-ffb547?style=flat-square&labelColor=0c1016" alt="Status: in development"></a>
   <a href="https://kruxsys.com/projects/plexdio/"><img src="https://img.shields.io/badge/project%20page-kruxsys.com-22d3ee?style=flat-square&labelColor=0c1016" alt="Project page on kruxsys.com"></a>
   <a href="https://kruxsys.com/"><img src="https://img.shields.io/badge/by-KruxSYS-22d3ee?style=flat-square&labelColor=0c1016" alt="KruxSYS"></a>
-  <a href="https://github.com/KruxSYS/plexdio/releases"><img src="https://img.shields.io/badge/download-Releases-22d3ee?style=flat-square&labelColor=0c1016" alt="Download from Releases"></a>
+  <a href="https://plexdio.kruxsys.com/download"><img src="https://img.shields.io/badge/download-plexdio.kruxsys.com-22d3ee?style=flat-square&labelColor=0c1016" alt="Download from plexdio.kruxsys.com"></a>
+  <a href="https://plexdio.kruxsys.com/changelog"><img src="https://img.shields.io/badge/version-0.1.0-2a3442?style=flat-square&labelColor=0c1016" alt="Version 0.1.0"></a>
   <img src="https://img.shields.io/badge/Windows%2010%20%2F%2011-x64-2a3442?style=flat-square&labelColor=0c1016" alt="Windows 10 and 11, x64">
 </p>
 
 <p align="center">
+  <a href="https://plexdio.kruxsys.com">Website</a> ·
+  <a href="https://plexdio.kruxsys.com/download">Download</a> ·
+  <a href="https://plexdio.kruxsys.com/docs">Docs</a> ·
   <a href="https://kruxsys.com/projects/plexdio/">Project page</a> ·
   <a href="https://kruxsys.com/">kruxsys.com</a> ·
-  <a href="https://github.com/KruxSYS/plexdio/releases">Releases</a>
+  <a href="https://github.com/KruxSYS/plexdio">Source</a>
 </p>
 
 Plexdio is a small, native Windows 10/11 x64 music player for Plex, a lean alternative to Plexamp.
-It is one self-contained exe (about 25 MB, most of it Ride's beat-tracking model), with no
-installer, no runtime and no Electron.
+It is one self-contained exe (about 25 MB, most of it Ride's beat-tracking model) with no
+runtime and no Electron, shipped as an **installer** and a **portable zip** on
+[plexdio.kruxsys.com](https://plexdio.kruxsys.com/download), and it keeps itself up to date.
 
 *Formerly **Plexify**, then briefly **PlexDio**. Settings, the library cache, the saved sign-in and the start-with-Windows
 entry carry over automatically on first start.*
@@ -268,6 +273,42 @@ Ride in a hover ship, a car or a plane:
 
 ![The hover ship, the car and the plane on a loud stretch](docs/ride-craft.png)
 
+## Install, update and uninstall
+
+Download from **[plexdio.kruxsys.com/download](https://plexdio.kruxsys.com/download)** (Windows 10/11 x64).
+Both packages hold the same `plexdio.exe`; the files are not code-signed, so SmartScreen may warn on first
+start (*More info → Run anyway*; the download page lists each file's SHA-256).
+
+| | **Installer** `Plexdio-<ver>-win-x64-setup.exe` | **Portable zip** `Plexdio-<ver>-win-x64-portable.zip` |
+|---|---|---|
+| Installs to | `%LOCALAPPDATA%\Programs\Plexdio`, per user, no admin rights (all users offered when elevated) | Any folder: unzip and run `Plexdio\plexdio.exe` |
+| Marker next to the exe | `installed` (written by the setup) | `portable` (in the zip) |
+| Settings, queue | `%APPDATA%\Plexdio` | `Data\config` next to the exe |
+| Library cache, play history, Ride, artwork/audio cache, downloads, logs, model | `%LOCALAPPDATA%\Plexdio` | `Data\cache` next to the exe |
+| Plex sign-in | Windows Credential Manager ("Plexdio") | the same |
+| Start menu, Add/Remove Programs (publisher KruxSYS) | yes, plus an optional desktop icon | no |
+| Updates | downloads the new setup, checks SHA-256, runs it silently, restarts | downloads the new zip, checks SHA-256, swaps `plexdio.exe`, restarts |
+| Uninstall | Settings → Apps; keeps settings and caches | delete the folder |
+
+A bare `plexdio.exe` without a marker (older downloads, dev builds) is shown as *Standalone exe*: it
+uses the same profile folders as an installed copy, so existing users keep their data, and its update
+button opens the download page. `PLEXDIO_HOME` still overrides everything for test runs. The mode
+is resolved in `paths.rs` (`paths::resolve`, unit-tested).
+
+**Backup:** quit Plexdio (tray → Quit) and copy `%APPDATA%\Plexdio` and, for play history, Ride
+scores and downloads, `%LOCALAPPDATA%\Plexdio\db` and `…\offline`; a portable copy is backed up by
+copying its folder. The sign-in is not part of a backup.
+
+**Updates.** About 10 s after start and then at most once a day (the time is kept in the config),
+Plexdio asks `https://plexdio.kruxsys.com/api/v1/version?channel=stable&current=<ver>&arch=<x64|x64-setup>`
+with the user agent `Plexdio/<ver>`, Screvia's endpoint and format. It compares versions with
+semver itself. A newer release shows a slim banner, a dot on Settings and a section in
+**Settings → About** (mode, last check, *Check for updates*, *Automatically check for updates* (on by
+default), channel, release notes link, *Update now*). Downloads are rejected unless size and SHA-256
+match the manifest. A failed update offers the download page. Automatic checks fail silently (logged
+only); nothing blocks start-up or playback. `--update-url URL` or `PLEXDIO_UPDATE_URL` points the app at
+another server (staging, `mockplex --releases`). Privacy: [plexdio.kruxsys.com/privacy](https://plexdio.kruxsys.com/privacy).
+
 ## Status
 
 **In development.** Tested against **mockplex**, the mock Plex server in this repository, under
@@ -310,6 +351,7 @@ SQLite is compiled in; there is nothing else to install.
 
 ```sh
 ./build.sh          # release build -> dist/plexdio.exe (+ dist/plexdio.ico)
+./build.sh release  # installer + portable zip + manifests (see Releasing)
 ./build.sh test     # or: cargo test --workspace
 make dist           # same as ./build.sh
 ```
@@ -322,6 +364,68 @@ The app also builds and runs natively on Linux for development (`cargo run -p pl
 every Windows-specific module has a no-op stub.
 
 Release profile: `opt-level="z"`, fat LTO, one codegen unit, stripped, static C runtime.
+
+## Releasing
+
+The version lives in one place: `[workspace.package] version` in `Cargo.toml`. The app (About, the
+update check), the exe's version resource (winresource), the installer (`/DAppVersion`), the file
+names and the manifests all take it from there.
+
+1. Bump `version` in `Cargo.toml` and add a `## [x.y.z] - YYYY-MM-DD` section to
+   [CHANGELOG.md](CHANGELOG.md) (Keep a Changelog). Commit.
+2. `./build.sh release` (add `--channel beta` for a preview). It:
+   - cross-builds the exe and checks its imports against `tools/allowed-imports.txt`;
+   - packs `Plexdio-<ver>-win-x64-portable.zip` (`Plexdio\plexdio.exe`, the `portable` marker,
+     `README.txt`, `LICENSE.txt`; fixed timestamps);
+   - builds `Plexdio-<ver>-win-x64-setup.exe` from `installer/plexdio.iss` with Inno Setup 7 under Wine;
+   - writes SHA-256 sums, `NOTES.md` (the CHANGELOG section) and the manifests into `releases/`
+     (git-ignored, a mirror of the site's volume) through `tools/release_manifest.py`;
+   - copies the packages and `SHA256SUMS` to `dist/`;
+   - publishes into the live site's volume `live-plexmusicplayer_plexdio-releases`
+     (`--volume NAME` for another one, `--no-publish` to stop before).
+
+   It refuses a version that is already in `releases/`, a version without a CHANGELOG section, and
+   publishing a version the volume already has. A published version is never replaced: bump instead.
+3. Website changes (pages, nginx) go live with `propose_service_update`; the operator applies it.
+   Release files don't need a deploy: `./build.sh publish [--volume NAME]` copies a staged version into
+   the volume, and the site serves it at once (manifests are `no-cache`). Staging uses
+   `stage-plexmusicplayer_plexdio-releases`, a local `docker compose up` uses
+   `dev-plexmusicplayer_plexdio-releases`.
+
+Inno Setup: `ISCC` defaults to `~/.wine/drive_c/is7/ISCC.exe` (Inno Setup 7 installed under Wine with
+`innosetup-7.x.exe /VERYSILENT /DIR=C:\is7`); set `ISCC=` for another path. `tools/make_installer_art.sh`
+redraws the wizard images from `installer/wizard.svg` and the logo.
+
+## Website (plexdio.kruxsys.com)
+
+`compose.yaml` + `service.json` run the website as an ai-pipe service: one `web` service
+(`nginxinc/nginx-unprivileged:1.30.6-alpine`, pinned by digest, non-root, read-only root, no published
+ports), built from `site/`. Like Krunk's site and unlike Screvia's, there is no API, database or
+secret: Screvia's routes and formats are served from static files.
+
+| Route | Answer |
+|---|---|
+| `/`, `/download`, `/changelog`, `/docs`, `/privacy` | the site (`site/pages/*` in `_layout.html`, rendered at image build; `site/static/` assets; screenshots are WebP copies of `docs/*.png`, `site/tools/make-images.sh`) |
+| `/healthz` | `200 ok` from the image alone (the health path in `service.json`) |
+| `/api/v1/version?channel=stable\|beta&arch=x64\|x64-setup` | `updates/<channel>/<arch>.json` from the volume, 404 JSON when nothing is published; other values never reach a path |
+| `/api/v1/releases` | `api/releases.json` (every package with `notes_html`), `[]` when empty |
+| `/downloads/<ver>/<file>` | release files with exact types, `Content-Length`, `attachment`, immutable caching |
+
+The download and changelog pages read the two API routes in the browser and show *No release
+published yet* while the volume is empty.
+
+**Configuration** (`.env`, see [.env.example](.env.example); all optional, no secrets):
+`MANIFEST_CACHE_CONTROL` (default `no-cache`) and `DOWNLOAD_MAX_AGE` (default one year).
+
+**Data:** only the named volume `plexdio-releases` (`live-plexmusicplayer_plexdio-releases` on the
+live stack): `downloads/<ver>/` (setup, zip, `SHA256SUMS`, `NOTES.md`), `api/releases.json` and
+`updates/<channel>/<arch>.json`. Redeploys keep it; only `docker compose down -v` deletes it. It can
+always be rebuilt from `releases/` with `./build.sh publish`, but back it up anyway:
+
+```sh
+docker run --rm -v live-plexmusicplayer_plexdio-releases:/r:ro -v "$PWD":/b alpine:3.22 tar czf /b/plexdio-releases.tgz -C /r .
+docker run --rm -v live-plexmusicplayer_plexdio-releases:/r -v "$PWD":/b alpine:3.22 sh -c 'tar xzf /b/plexdio-releases.tgz -C /r && chmod -R a+rX /r'   # restore
+```
 
 ## Running against the mock server
 
@@ -339,9 +443,14 @@ a couple of polls and serves a JSON Plex API on both the plex.tv and the PMS pat
 `mockplex.exe` is also cross-compiled (`cargo build --release -p mockplex --target
 x86_64-pc-windows-gnu`) so the player can be tested on a Windows machine without a network.
 
+`mockplex --releases DIR [--port N] [--bind ADDR]` serves a releases folder (as written by
+`./build.sh release --releases-dir DIR`) with the website's update routes, for testing updates where
+the site is out of reach: `plexdio.exe --update-url http://127.0.0.1:N`.
+
 Environment variables: `PLEXDIO_HOME` (put config and caches in one folder, for side-by-side
-test runs), `PLEXDIO_LOG` (`error`…`trace`), `PLEXDIO_PLEX_TV_URL`,
-`PLEXDIO_DISCORD_CLIENT_ID`.
+test runs), `PLEXDIO_LOG` (`error`…`trace`), `PLEXDIO_PLEX_TV_URL`, `PLEXDIO_UPDATE_URL`,
+`PLEXDIO_DISCORD_CLIENT_ID`. Command line: `--plex-tv-url URL`, `--update-url URL`, `--no-browser`;
+`--uninstall` (run by the uninstaller) removes the start-with-Windows entry and exits.
 
 ## Architecture
 
@@ -371,9 +480,14 @@ crates/plexdio
                      app/ride.rs (Ride mode on the Now playing page)
   game/              Ride: song analysis (onsets, beat grid, sections), Beat This! AI tier,
                      background build, map generator, song clock, ride rules, 3D renderer
+  update/            update check (manifest, semver, schedule), verified downloads, silent
+                     installer run, portable exe swap
   win/               tray + media keys, SMTC, autostart, single instance, Wine workarounds
 crates/mockplex      mock plex.tv + Plex Media Server (tiny_http), including playlist writes,
-                     lyric streams and fake remote-controllable players
+                     lyric streams and fake remote-controllable players; --releases mode
+installer/           Inno Setup script, wizard art, the "installed" marker
+site/                the plexdio.kruxsys.com website (pages, assets, nginx, Dockerfile)
+tools/release_manifest.py   changelog notes, portable zip, SHA-256 and update manifests for releases
 assets/brand         Plexdio and KruxSYS logos (SVG); the icons are rendered from them
 assets/models        Ride's beat model (ONNX, embedded; see its README)
 tools/make_icons.py  regenerates assets/icon.ico, icon.png, icon64.rgba, discord-icon.png
@@ -394,7 +508,8 @@ Notable choices:
   binary size down.
 - **No XML.** Every request asks for `application/json`.
 
-Data locations: `%APPDATA%\Plexdio\config.json` (settings, resume queue),
+Data locations (installed and standalone; a portable copy uses `Data\config` and `Data\cache` next to
+the exe instead): `%APPDATA%\Plexdio\config.json` (settings, resume queue),
 `%LOCALAPPDATA%\Plexdio\db\*.sqlite` (library cache, plus Ride tracks and scores), `…\images`
 (artwork, LRU), `…\audio` (audio cache, LRU), `…\models` (Ride's beat model, unpacked from the
 exe), `…\logs\plexdio.log`.

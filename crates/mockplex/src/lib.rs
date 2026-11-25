@@ -6,6 +6,7 @@
 //! advertised server connection points back at it too.
 
 pub mod library;
+pub mod releases;
 
 use library::{Album, Artist, Library, Track, AUDIO};
 use serde_json::{json, Value};
