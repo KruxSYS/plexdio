@@ -340,9 +340,22 @@ the test VM).
 | Off-screen window rescue (display change, sleep) | ✅ unit tests + Windows 11 VM (window pushed to 5000,5000 came back in 3 s) |
 | Settings persistence, tray, media keys, shortcuts | ✅ Wine |
 | SMTC overlay (metadata, status, timeline, buttons) | ✅ Windows 11 VM |
+| Installer (Inno Setup 7): wizard, per-user install, Start menu, Add/Remove Programs (KruxSYS, version), uninstall keeping data | ✅ Windows 11 VM (0.1.0, 2026-11-25); silent install/uninstall under Wine |
+| Installed update: check finds 0.1.1, download + SHA-256, silent setup, relaunch as 0.1.1, settings kept | ✅ Windows 11 VM against `mockplex --releases` with a throwaway 0.1.1 |
+| Tampered SHA-256 in the manifest aborts, nothing installed or left behind | ✅ Windows 11 VM + integration tests |
+| Portable zip: `Data\` next to the exe, About shows Portable, in-app update swaps the exe and keeps `Data\` | ✅ Windows 11 VM (0.1.0 → 0.1.1) + integration tests |
+| Offline start (outbound blocked): normal start, failed check only logged | ✅ Windows 11 VM (firewall rule) |
+| About settling to "Updated to x.y.z", setup cleanup after update, uninstall "data kept" note | ✅ unit tests; ⚠️ added after the VM run, not re-run on the VM |
+| Website: pages, empty state, manifests, downloads with matching SHA-256, headers | ✅ staging stack (curl + Playwright, desktop and mobile) |
 | Real audio output | ❌ no audio device in Wine or the VM (null sink path) |
 | Real Discord client, Windows live-resize, title bar drag/snap on Windows | ❌ not checked on a real Windows desktop yet |
 | Real Plex account, real server, Plex Pass sonic data | ❌ not available in this environment |
+| plexdio.kruxsys.com itself (DNS, TLS, proxy), updates from the live site | ❌ not live yet: the service awaits the operator's Apply, and 0.1.0 is published into the live volume after that (`./build.sh publish`) |
+
+The update acceptance run on the VM used a local `mockplex --releases` server instead of the
+staging site (the VM cannot reach the Docker host), a throwaway 0.1.1 built from a temporary
+worktree (never committed or published), and `PLEXDIO_UPDATE_URL`. Screenshots are kept with the
+project's pipeline notes.
 
 ## Build
 
@@ -579,7 +592,7 @@ memory under Wine.
 ## Testing
 
 ```sh
-cargo test --workspace                                  # 195 tests: parsing, sync, audio, EQ, queue, playlists, downloads, cast, Ride, ...
+cargo test --workspace                                  # 257 tests: parsing, sync, audio, EQ, queue, playlists, downloads, cast, Ride, ...
 cargo test --workspace --target x86_64-pc-windows-gnu   # same suite under Wine
 semgrep scan --config p/default --metrics off crates     # 0 findings
 cargo run --release -p plexdio --example retrovis_preview # renders every Now playing look to target/retrovis/*.png
