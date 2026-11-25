@@ -11,4 +11,5 @@ pub mod player;
 pub mod plex;
 pub mod secure_store;
 pub mod ui;
+pub mod update;
 pub mod win;
