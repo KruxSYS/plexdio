@@ -17,3 +17,7 @@ __pycache__/
 *.pyc
 # Tool caches
 .serena/
+# Staged releases (./build.sh release; published into the website volume, never committed)
+/releases/
+# Service settings (see .env.example)
+.env

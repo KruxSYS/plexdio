@@ -1,0 +1,29 @@
+# DLLs plexdio.exe may import (checked by ./build.sh). System DLLs only: Plexdio ships as one exe with
+# no runtime. Add a line only for a DLL every Windows 10/11 x64 has, and say why.
+# Core Win32 (windows-sys, Rust std)
+KERNEL32.dll
+USER32.dll
+ADVAPI32.dll
+gdi32.dll
+shell32.dll
+ole32.dll
+oleaut32.dll
+combase.dll
+ntdll.dll
+userenv.dll
+ws2_32.dll
+msvcrt.dll
+imm32.dll
+uxtheme.dll
+dwmapi.dll
+propsys.dll
+api-ms-win-core-path-l1-1-0.dll
+api-ms-win-core-synch-l1-2-0.dll
+# WinRT (the media overlay, SMTC)
+api-ms-win-core-winrt-l1-1-0.dll
+# Crypto: Credential Manager / DPAPI (crypt32), rustls and std randomness (bcrypt, bcryptprimitives)
+crypt32.dll
+bcrypt.dll
+bcryptprimitives.dll
+# Ride's 1 ms frame timer (timeBeginPeriod)
+winmm.dll
