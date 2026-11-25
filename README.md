@@ -345,12 +345,24 @@ the test VM).
 | Tampered SHA-256 in the manifest aborts, nothing installed or left behind | ✅ Windows 11 VM + integration tests |
 | Portable zip: `Data\` next to the exe, About shows Portable, in-app update swaps the exe and keeps `Data\` | ✅ Windows 11 VM (0.1.0 → 0.1.1) + integration tests |
 | Offline start (outbound blocked): normal start, failed check only logged | ✅ Windows 11 VM (firewall rule) |
-| About settling to "Updated to x.y.z", setup cleanup after update, uninstall "data kept" note | ✅ unit tests; ⚠️ added after the VM run, not re-run on the VM |
+| About settling to "Updated to x.y.z", setup cleanup after update, uninstall "data kept" note | ✅ unit tests + Windows 11 VM re-run (final 0.1.0 → throwaway 0.1.1 built from the same commit): About shows "Updated to 0.1.1" with no update offered, only `setup-0.1.1.log` left in `%TEMP%\Plexdio-update`, uninstall message names the kept folders and both survive |
+| Installing over a running Plexdio (in the tray, close-to-tray on; `setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-`) | ✅ Windows 11 VM: the Restart Manager finds it and asks it to close; Plexdio treats that as a window close and stays in the tray, so after Restart Manager's 30 s timeout setup ends it (`Shutting down applications using our files. (forced)`), installs, and `[Run]` starts it again (new process). Settings intact. App updates don't hit the wait: the app quits itself before the setup runs |
+| All-users install (`/ALLUSERS`, elevated) | ✅ Windows 11 VM: `C:\Program Files\Plexdio`, HKLM Add/Remove Programs entry (Plexdio 0.1.0, KruxSYS), common Start menu link; silent uninstall removes all three and keeps user data |
 | Website: pages, empty state, manifests, downloads with matching SHA-256, headers | ✅ staging stack (curl + Playwright, desktop and mobile) |
 | Real audio output | ❌ no audio device in Wine or the VM (null sink path) |
 | Real Discord client, Windows live-resize, title bar drag/snap on Windows | ❌ not checked on a real Windows desktop yet |
 | Real Plex account, real server, Plex Pass sonic data | ❌ not available in this environment |
 | plexdio.kruxsys.com itself (DNS, TLS, proxy), updates from the live site | ❌ not live yet: the service awaits the operator's Apply, and 0.1.0 is published into the live volume after that (`./build.sh publish`) |
+
+**Not verified on this build:**
+
+- plexdio.kruxsys.com itself (DNS, TLS, the reverse proxy) and updates fetched from the live site: the
+  service awaits the operator's Apply.
+- A real Plex account, server or plex.tv, and real audio output.
+- The SmartScreen prompt: the VM copies were not downloaded from the internet, so Windows never flagged them.
+- The beta channel fetched from the app: only the server side (`?channel=beta` manifests) was checked.
+- A graceful close of a running Plexdio by the installer (it is ended after the Restart Manager timeout,
+  see above); a once-a-day recheck over real time (unit-tested only).
 
 The update acceptance run on the VM used a local `mockplex --releases` server instead of the
 staging site (the VM cannot reach the Docker host), a throwaway 0.1.1 built from a temporary
