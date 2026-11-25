@@ -13,9 +13,22 @@ fn load_icon() -> egui::IconData {
 }
 
 fn main() {
+    // Run by the uninstaller ([UninstallRun] in installer/plexdio.iss): remove what lives outside the
+    // program folder and is not user data (the start-with-Windows entry), then exit. Settings,
+    // caches and the saved sign-in stay.
+    if std::env::args().skip(1).any(|a| a == "--uninstall") {
+        plexdio::win::autostart::set_enabled(false);
+        return;
+    }
     paths::migrate_legacy_dirs();
     let log_path = logging::init(&paths::log_dir(), cfg!(debug_assertions));
-    log::info!("Plexdio {} starting (log: {})", env!("CARGO_PKG_VERSION"), log_path.display());
+    log::info!(
+        "Plexdio {} starting ({}, data: {}; log: {})",
+        env!("CARGO_PKG_VERSION"),
+        paths::install_mode().label(),
+        paths::config_dir().display(),
+        log_path.display()
+    );
 
     let Some(_guard) = single_instance::acquire() else {
         log::info!("another instance is running; activating it");
