@@ -62,7 +62,9 @@ UsePreviousTasks=yes
 Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [Messages]
-en.UninstalledMost=Plexdio has been removed.%n%nYour settings, library cache and downloads were kept in %APPDATA%\Plexdio and %LOCALAPPDATA%\Plexdio, and the Plex sign-in in the Windows Credential Manager. Delete those folders to remove them too.
+; Shown after a complete uninstall (UninstalledMost only appears when files could not be removed).
+en.UninstalledAll=Plexdio has been removed.%n%nYour settings, library cache and downloads were kept in %APPDATA%\Plexdio and %LOCALAPPDATA%\Plexdio, and the Plex sign-in in the Windows Credential Manager. Delete those folders to remove them too.
+en.UninstalledMost=Plexdio has been removed, but some files could not be deleted.%n%nYour settings, library cache and downloads were kept in %APPDATA%\Plexdio and %LOCALAPPDATA%\Plexdio.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

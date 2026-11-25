@@ -545,6 +545,7 @@ impl PlexdioApp {
             last_window_size: None,
             updates,
         };
+        app.after_update_check();
         app.token = app.store.get();
         if app.token.is_some() {
             app.validate_token();

@@ -39,6 +39,24 @@ pub fn work_dir() -> PathBuf {
     std::env::temp_dir().join("Plexdio-update")
 }
 
+/// Removes downloaded installers (and partial downloads) from [`work_dir`]; the setup logs stay.
+/// Returns false while a file is still in use.
+pub fn cleanup() -> bool {
+    cleanup_in(&work_dir())
+}
+
+fn cleanup_in(dir: &Path) -> bool {
+    let Ok(rd) = std::fs::read_dir(dir) else { return true };
+    let mut all = true;
+    for e in rd.flatten() {
+        let name = e.file_name().to_string_lossy().to_ascii_lowercase();
+        if (name.ends_with(".exe") || name.ends_with(".partial")) && std::fs::remove_file(e.path()).is_err() {
+            all = false;
+        }
+    }
+    all
+}
+
 /// Downloads and verifies the installer. Returns its path.
 pub fn fetch(release: &VersionInfo, url: &str, progress: &mut dyn FnMut(u64, u64)) -> Result<PathBuf> {
     let name = download::file_name_from_url(url)
@@ -79,6 +97,20 @@ pub fn launch(setup: &Path, version: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cleanup_keeps_only_the_logs() {
+        let d = std::env::temp_dir().join(format!("plexdio-inst-clean-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        for f in ["Plexdio-0.1.1-win-x64-setup.exe", "x.exe.partial", "setup-0.1.1.log"] {
+            std::fs::write(d.join(f), b"x").unwrap();
+        }
+        assert!(cleanup_in(&d));
+        let left: Vec<_> = std::fs::read_dir(&d).unwrap().flatten().map(|e| e.file_name()).collect();
+        assert_eq!(left, vec![std::ffi::OsString::from("setup-0.1.1.log")]);
+        assert!(cleanup_in(&d.join("missing")));
+    }
 
     #[test]
     fn silent_switches_and_quoting() {

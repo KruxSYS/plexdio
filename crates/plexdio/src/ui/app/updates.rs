@@ -107,7 +107,37 @@ fn outcome_text(o: &CheckOutcome) -> String {
     }
 }
 
+/// The About text after a saved update was installed: the saved one is no longer newer.
+pub fn settled_result(pending: Option<&update::PendingUpdate>, current: &update::version::Version) -> Option<String> {
+    match pending {
+        Some(p) if !p.is_newer_than(current) => Some(format!("Updated to {current}")),
+        _ => None,
+    }
+}
+
 impl PlexdioApp {
+    /// At start-up: once the update a previous run found is installed, drop it and say so in
+    /// About (instead of "x.y.z is available"), and remove the installer it downloaded.
+    pub(super) fn after_update_check(&mut self) {
+        if let Some(text) = settled_result(self.config.pending_update.as_ref(), &update::version::current()) {
+            log::info!("update: {text}");
+            self.config.pending_update = None;
+            self.config.last_update_result = Some(text);
+            self.save_config();
+        }
+        if self.updates.mode == InstallMode::Installed {
+            // The installer that started us may still be closing: retry for a while.
+            std::thread::spawn(|| {
+                for _ in 0..20 {
+                    if update::installer::cleanup() {
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(500));
+                }
+            });
+        }
+    }
+
     /// Called every frame: starts the automatic check when it is due and keeps the app waking
     /// up for the next one (also while it sits hidden in the tray).
     pub(super) fn poll_updates(&mut self, ctx: &egui::Context) {
@@ -438,6 +468,29 @@ mod tests {
         assert_eq!(ago(t + 86_400, t), "1 day ago");
         // A clock set back reads as "just now", not a huge number.
         assert_eq!(ago(t, t + 500), "just now");
+    }
+
+    #[test]
+    fn an_installed_update_settles_the_about_text() {
+        let p = |v: &str| update::PendingUpdate {
+            info: update::manifest::VersionInfo {
+                version: v.into(),
+                channel: "stable".into(),
+                arch: "x64-setup".into(),
+                released_at: None,
+                notes_md: String::new(),
+                download_url: "/d/x.exe".into(),
+                sha256: "a".repeat(64),
+                size: 1,
+                min_supported: None,
+            },
+            url: "http://h/d/x.exe".into(),
+            required: false,
+        };
+        let cur = update::version::parse("0.1.1").unwrap();
+        assert_eq!(settled_result(Some(&p("0.1.1")), &cur).as_deref(), Some("Updated to 0.1.1"));
+        assert_eq!(settled_result(Some(&p("0.1.2")), &cur), None);
+        assert_eq!(settled_result(None, &cur), None);
     }
 
     #[test]
