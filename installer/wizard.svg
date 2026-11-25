@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 164 314" width="164" height="314">
+  <!-- Inno Setup wizard side image (KruxSYS layout, as Screvia's). Rendered by tools/make_installer_art.sh.
+       The mark is a copy of assets/brand/plexdio.svg: keep the two in sync. -->
+  <rect width="164" height="314" fill="#07090c"/>
+  <path d="M0 40V0h40" fill="none" stroke="#22d3ee" stroke-width="4"/>
+  <g transform="translate(42 90) scale(1.25)">
+    <rect x="3" y="3" width="58" height="58" fill="#0c1016" stroke="#2a3442" stroke-width="2"/>
+    <path d="M3 19V3h16M45 61h16V45" fill="none" stroke="#22d3ee" stroke-width="3"/>
+    <path d="M19 16v32l27-16z" fill="none" stroke="#e8ecf2" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="4"/>
+    <rect x="25" y="28.5" width="7" height="7" fill="#22d3ee"/>
+  </g>
+  <text x="82" y="204" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="22" fill="#e8ecf2">Plexdio</text>
+  <text x="82" y="290" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="12" fill="#8e9bb0">by <tspan font-weight="bold" fill="#e8ecf2">Krux</tspan><tspan font-family="DejaVu Sans Mono, monospace" fill="#22d3ee">SYS</tspan></text>
+</svg>
