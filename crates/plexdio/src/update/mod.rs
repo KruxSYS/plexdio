@@ -53,6 +53,23 @@ impl Channel {
     }
 }
 
+/// A release found by a check, kept in the config: the manifest entry, its resolved download
+/// URL and whether it was required (below `min_supported`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PendingUpdate {
+    pub info: manifest::VersionInfo,
+    pub url: String,
+    #[serde(default)]
+    pub required: bool,
+}
+
+impl PendingUpdate {
+    /// Still newer than this build (and still a valid manifest entry)?
+    pub fn is_newer_than(&self, current: &version::Version) -> bool {
+        manifest::validate(&self.info).is_ok() && self.info.parsed_version().is_some_and(|v| version::is_newer(&v, current))
+    }
+}
+
 /// The package this copy updates from: the installer for installed copies, the zip otherwise.
 pub fn arch_for(mode: InstallMode) -> &'static str {
     match mode {
@@ -146,5 +163,39 @@ mod tests {
     fn channel_serialises_lowercase() {
         assert_eq!(serde_json::to_string(&Channel::Beta).unwrap(), "\"beta\"");
         assert_eq!(serde_json::from_str::<Channel>("\"stable\"").unwrap(), Channel::Stable);
+    }
+}
+
+#[cfg(test)]
+mod pending_tests {
+    use super::*;
+
+    fn pending(v: &str) -> PendingUpdate {
+        PendingUpdate {
+            info: manifest::VersionInfo {
+                version: v.into(),
+                channel: "stable".into(),
+                arch: "x64".into(),
+                released_at: None,
+                notes_md: String::new(),
+                download_url: "/d/x.zip".into(),
+                sha256: "a".repeat(64),
+                size: 10,
+                min_supported: None,
+            },
+            url: "https://plexdio.kruxsys.com/d/x.zip".into(),
+            required: false,
+        }
+    }
+
+    #[test]
+    fn a_saved_update_is_dropped_once_installed() {
+        let current = version::parse("0.1.1").unwrap();
+        assert!(pending("0.1.2").is_newer_than(&current));
+        assert!(!pending("0.1.1").is_newer_than(&current));
+        assert!(!pending("0.1.0").is_newer_than(&current));
+        let json = serde_json::to_string(&pending("0.2.0")).unwrap();
+        let back: PendingUpdate = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, pending("0.2.0"));
     }
 }

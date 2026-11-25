@@ -30,11 +30,34 @@ fn main() {
         log_path.display()
     );
 
-    let Some(_guard) = single_instance::acquire() else {
+    // Started by a portable self-update: the old process is still exiting, so wait for it
+    // instead of handing over to it.
+    let after_update = std::env::args().skip(1).any(|a| a == plexdio::update::portable::AFTER_UPDATE_FLAG);
+    let mut guard = single_instance::acquire();
+    if after_update {
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        while guard.is_none() && std::time::Instant::now() < until {
+            std::thread::sleep(std::time::Duration::from_millis(250));
+            guard = single_instance::acquire();
+        }
+    }
+    let Some(_guard) = guard else {
         log::info!("another instance is running; activating it");
         single_instance::activate_existing();
         return;
     };
+    // Remove what a portable self-update left behind (the previous exe). It may take a moment
+    // until Windows lets go of the old process's image.
+    if let Ok(exe) = std::env::current_exe() {
+        std::thread::spawn(move || {
+            for _ in 0..20 {
+                if plexdio::update::portable::cleanup(&exe) {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        });
+    }
 
     let opts = LaunchOptions::from_args(std::env::args().skip(1));
     if let Some(u) = &opts.plex_tv_url {

@@ -77,6 +77,16 @@ pub struct Config {
     pub retro: crate::ui::retrovis::RetroPrefs,
     /// Ride (the game on the Now playing page).
     pub ride: crate::game::RidePrefs,
+    /// Check plexdio.kruxsys.com for a new version once a day (Settings → About).
+    pub update_check: bool,
+    pub update_channel: crate::update::Channel,
+    /// Unix time of the last successful update check.
+    pub last_update_check: Option<u64>,
+    /// What that check found, as shown in About ("Up to date (0.1.0)").
+    pub last_update_result: Option<String>,
+    /// A newer release that check found, so the banner survives a restart (the next check is a
+    /// day later). Dropped once it is no longer newer than the running version.
+    pub pending_update: Option<crate::update::PendingUpdate>,
 }
 
 impl Default for Config {
@@ -114,6 +124,11 @@ impl Default for Config {
             downloads_lan_only: false,
             retro: Default::default(),
             ride: Default::default(),
+            update_check: true,
+            update_channel: Default::default(),
+            last_update_check: None,
+            last_update_result: None,
+            pending_update: None,
         }
     }
 }

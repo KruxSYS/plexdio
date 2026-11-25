@@ -108,8 +108,10 @@ pub fn rollback(exe: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Removes what an update leaves next to the exe: `<exe>.old` (after the restart),
-/// `<exe>.new` and partial downloads. Errors are ignored (the old process may still be exiting).
+/// Removes what an update leaves next to the exe: `<exe>.old` (after the restart), `<exe>.new`
+/// and partial downloads (`Plexdio-*-portable.zip.partial`). A complete zip is left alone: it
+/// may be the user's own download. Returns false while a file can't be deleted yet (the old
+/// process may still be exiting).
 pub fn cleanup(exe: &Path) -> bool {
     let mut all = true;
     for p in [old_path(exe), sibling(exe, ".new")] {
@@ -121,7 +123,7 @@ pub fn cleanup(exe: &Path) -> bool {
         if let Ok(rd) = std::fs::read_dir(dir) {
             for e in rd.flatten() {
                 let name = e.file_name().to_string_lossy().to_string();
-                if name.starts_with("Plexdio-") && (name.ends_with("-portable.zip") || name.ends_with("-portable.zip.partial")) {
+                if name.starts_with("Plexdio-") && name.ends_with("-portable.zip.partial") {
                     let _ = std::fs::remove_file(e.path());
                 }
             }
@@ -281,8 +283,10 @@ mod tests {
         std::fs::write(&exe, b"MZ").unwrap();
         std::fs::write(old_path(&exe), b"MZ").unwrap();
         std::fs::write(d.join("Plexdio-0.1.1-win-x64-portable.zip.partial"), b"x").unwrap();
+        std::fs::write(d.join("Plexdio-0.1.0-win-x64-portable.zip"), b"the user's own download").unwrap();
         std::fs::write(d.join("portable"), b"").unwrap();
         assert!(cleanup(&exe));
+        assert!(d.join("Plexdio-0.1.0-win-x64-portable.zip").exists());
         assert!(!old_path(&exe).exists());
         assert!(!d.join("Plexdio-0.1.1-win-x64-portable.zip.partial").exists());
         assert!(exe.exists() && d.join("portable").exists());

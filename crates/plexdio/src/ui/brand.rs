@@ -13,6 +13,7 @@ pub const SMALL: f32 = 28.0;
 /// Edge of the small icon variant: a step lighter than `LINE_2` so it reads on dark taskbars.
 const SMALL_EDGE: Color32 = Color32::from_rgb(0x3a, 0x46, 0x58);
 
+pub const WEBSITE_URL: &str = "https://plexdio.kruxsys.com";
 pub const PROJECT_URL: &str = "https://kruxsys.com/projects/plexdio/";
 pub const SOURCE_URL: &str = "https://github.com/KruxSYS/plexdio";
 pub const KRUXSYS_URL: &str = "https://kruxsys.com/";

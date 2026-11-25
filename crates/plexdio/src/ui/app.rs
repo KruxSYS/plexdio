@@ -37,6 +37,7 @@ use super::theme;
 
 mod now_playing;
 mod ride;
+mod updates;
 
 pub const TOKEN_NAME: &str = "plex-token";
 /// Client size of the mini-player window (logical points).
@@ -49,6 +50,8 @@ pub struct LaunchOptions {
     pub plex_tv_url: Option<String>,
     /// Don't open a browser for sign-in; only log/show the URL.
     pub no_browser: bool,
+    /// Update server base URL instead of https://plexdio.kruxsys.com (test and staging servers).
+    pub update_url: Option<String>,
 }
 
 impl LaunchOptions {
@@ -56,13 +59,16 @@ impl LaunchOptions {
         let mut o = LaunchOptions {
             plex_tv_url: std::env::var("PLEXDIO_PLEX_TV_URL").ok().filter(|s| !s.is_empty()),
             no_browser: std::env::var_os("PLEXDIO_NO_BROWSER").is_some(),
+            update_url: std::env::var("PLEXDIO_UPDATE_URL").ok().filter(|s| !s.is_empty()),
         };
         let mut it = args.into_iter();
         while let Some(a) = it.next() {
             match a.as_str() {
                 "--plex-tv-url" => o.plex_tv_url = it.next(),
                 "--no-browser" => o.no_browser = true,
+                "--update-url" => o.update_url = it.next(),
                 s if s.starts_with("--plex-tv-url=") => o.plex_tv_url = Some(s["--plex-tv-url=".len()..].to_string()),
+                s if s.starts_with("--update-url=") => o.update_url = Some(s["--update-url=".len()..].to_string()),
                 _ => {}
             }
         }
@@ -95,6 +101,10 @@ pub enum Msg {
     Download(u64, crate::cache::offline::Event),
     /// Players found for casting.
     CastPlayers(Result<Vec<crate::plex::remote::PlayerInfo>, String>),
+    /// An update check finished (started by the user?, outcome).
+    UpdateChecked(bool, Result<crate::update::check::CheckOutcome, String>),
+    /// An update was downloaded and verified (or failed).
+    UpdateApplied(Result<updates::Applied, String>),
 }
 
 /// Lyrics panel content for one track.
@@ -406,6 +416,8 @@ pub struct PlexdioApp {
     output_devices: Option<(Vec<String>, Option<String>)>,
     /// When the last device listing was started; `None` while one is still running.
     output_devices_at: Option<std::time::Instant>,
+    /// Update checks and the update banner.
+    updates: updates::UpdateState,
 }
 
 impl PlexdioApp {
@@ -417,6 +429,12 @@ impl PlexdioApp {
         theme::apply(ctx);
         let http = Http::new(ClientInfo::new(config.client_id.clone()));
         let tv = PlexTv::new(http.clone(), opts.plex_tv_url.as_deref());
+        let mut updates = updates::UpdateState::new(opts.update_url.clone());
+        // An update found by an earlier run (until it is installed).
+        updates.found = config.pending_update.clone().filter(|p| p.is_newer_than(&crate::update::version::current()));
+        if opts.update_url.is_some() {
+            log::info!("using update server override {}", updates.base_url);
+        }
         let config_image_mb = config.image_cache_mb;
         let audio_cache = AudioCache::new(
             crate::paths::audio_cache_dir(),
@@ -525,6 +543,7 @@ impl PlexdioApp {
             output_devices: None,
             output_devices_at: Some(std::time::Instant::now() - std::time::Duration::from_secs(60)),
             last_window_size: None,
+            updates,
         };
         app.token = app.store.get();
         if app.token.is_some() {
@@ -1344,6 +1363,8 @@ impl PlexdioApp {
             Msg::LibraryLoaded(..) | Msg::SyncProgress(..) | Msg::SyncDone(..) => {}
             Msg::PlaylistSaved(gen, r) => self.playlist_saved(gen, r),
             Msg::CastPlayers(r) => self.cast_players = Some(r),
+            Msg::UpdateChecked(manual, r) => self.on_update_checked(manual, r),
+            Msg::UpdateApplied(r) => self.on_update_applied(r),
             Msg::Download(gen, ev) => {
                 if gen == self.library_gen {
                     self.download_event(ev);
@@ -1454,8 +1475,15 @@ impl PlexdioApp {
         }
         ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
             ui.add_space(10.0);
-            if nav_button(ui, cat == 4, Icon::Settings, "Settings") {
+            let (clicked, rect) = nav_button_at(ui, cat == 4, Icon::Settings, "Settings");
+            if clicked {
                 go = Some(Route::Settings);
+            }
+            if self.updates.found.is_some() {
+                // An update is waiting: a small cyan square at the end of the Settings row
+                // (details in Settings → About).
+                let dot = egui::Rect::from_center_size(egui::pos2(rect.right() - 14.0, rect.center().y), egui::vec2(7.0, 7.0));
+                ui.painter().rect_filled(dot, 0.0, theme::ACCENT);
             }
             if let Some(u) = &self.user {
                 account_row(ui, &u.display_name());
@@ -3405,6 +3433,7 @@ impl PlexdioApp {
             });
             ui.add_space(6.0);
         }
+        self.update_banner(ui);
         if self.route == Route::Settings {
             if !self.history.is_empty() && super::views::common::page_header(ui, "", true) {
                 self.back();
@@ -3975,6 +4004,12 @@ impl PlexdioApp {
         setting_row(ui, "Version", None, |ui| {
             ui.label(RichText::new(super::brand::build_line()).monospace().color(theme::TEXT_SOFT));
         });
+        self.settings_updates(ui);
+        setting_row(ui, "Website", None, |ui| {
+            if ui.link("plexdio.kruxsys.com").on_hover_text(super::brand::WEBSITE_URL).clicked() {
+                open = Some(super::brand::WEBSITE_URL);
+            }
+        });
         setting_row(ui, "Project page", None, |ui| {
             if ui.link("kruxsys.com/projects/plexdio").on_hover_text(super::brand::PROJECT_URL).clicked() {
                 open = Some(super::brand::PROJECT_URL);
@@ -4241,6 +4276,11 @@ fn account_row(ui: &mut egui::Ui, name: &str) {
 }
 
 fn nav_button(ui: &mut egui::Ui, selected: bool, icon: Icon, label: &str) -> bool {
+    nav_button_at(ui, selected, icon, label).0
+}
+
+/// [`nav_button`], also returning the row's rect.
+fn nav_button_at(ui: &mut egui::Ui, selected: bool, icon: Icon, label: &str) -> (bool, egui::Rect) {
     let (rect, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 38.0), egui::Sense::click());
     if selected {
         ui.painter().rect_filled(rect, theme::RADIUS, theme::SELECTED);
@@ -4258,7 +4298,7 @@ fn nav_button(ui: &mut egui::Ui, selected: bool, icon: Icon, label: &str) -> boo
         egui::FontId::proportional(15.0),
         color,
     );
-    resp.clicked()
+    (resp.clicked(), rect)
 }
 
 impl UiApp for PlexdioApp {
@@ -4294,6 +4334,7 @@ impl UiApp for PlexdioApp {
         for msg in self.jobs.drain() {
             self.handle(msg);
         }
+        self.poll_updates(&ui.ctx().clone());
         self.poll_playback();
         if self.config.visualiser != super::visualiser::VisMode::Off && self.screen == Screen::Main {
             let playing = self.playback.state == PlayState::Playing;
