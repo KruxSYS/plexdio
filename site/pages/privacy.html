@@ -1,0 +1,53 @@
+<!-- title: Plexdio privacy -->
+<!-- description: Plexdio has no telemetry. What the daily update check sends, what the website logs, and what goes to Plex. -->
+    <section class="page-head">
+      <div class="container">
+        <h1>Privacy</h1>
+        <p>Short version: Plexdio has no telemetry, no ads and no account of ours. It talks to Plex (your server and plex.tv) and,
+          once a day, asks this website whether there is a new version.</p>
+        <p>Plexdio and plexdio.kruxsys.com are made and run by <a href="https://kruxsys.com/">KruxSYS</a>.</p>
+      </div>
+    </section>
+    <section>
+      <div class="container prose narrow">
+        <h2>The app</h2>
+        <h3>No telemetry</h3>
+        <p>Plexdio does not collect usage statistics, crash reports, identifiers or analytics, and has no account of its own. Your
+          library cache, play history, settings and logs stay on your computer.</p>
+
+        <h3 id="update-check">Update check</h3>
+        <p>A few seconds after start-up and then at most once a day — or when you press <em>Check for updates</em> — Plexdio makes
+          one request:</p>
+<pre><code>GET https://plexdio.kruxsys.com/api/v1/version?channel=stable&amp;current=0.1.0&amp;arch=x64-setup
+User-Agent: Plexdio/0.1.0</code></pre>
+        <p>It contains only the <strong>update channel</strong> (stable or beta), the <strong>installed version</strong> (in the
+          query and the <code>User-Agent</code>) and the <strong>package type</strong> (<code>x64-setup</code> for an installed
+          copy, <code>x64</code> for the portable zip). No user, machine or installation identifier is sent, and nothing about your
+          music. Downloading an update fetches the file from this site the same way. You can turn the automatic check off in
+          <em>Settings → About</em>.</p>
+
+        <h3>Plex</h3>
+        <p>Sign-in, your library and playback go to your own Plex Media Server and to plex.tv, as with any Plex app. Plexdio
+          identifies itself to them as “Plexdio” with a random client ID created on first start. Plex's own privacy policy applies
+          there. Your Plex sign-in is stored in the Windows Credential Manager and is never sent anywhere else.</p>
+
+        <h3>Optional features that use other services</h3>
+        <ul>
+          <li><strong>Discord status</strong> (off by default) shows the playing song in your Discord profile. With album covers on,
+            Plexdio looks the cover up by artist and album name on Deezer or iTunes, because Discord can't show artwork from your
+            server.</li>
+          <li><strong>Lyrics</strong> come from your Plex server.</li>
+        </ul>
+
+        <h2>This website</h2>
+        <p>No cookies, no trackers, no third-party fonts or scripts, and nothing is stored in your browser. The download and
+          changelog pages load the release list from this same server.</p>
+        <p>The web server keeps standard access logs (IP address, time, requested URL including the update-check query above, user
+          agent) for operations and abuse prevention. They are rotated and not used for anything else. The server stores no
+          other data about visitors: it only serves the published releases.</p>
+
+        <h2>Contact</h2>
+        <p>Questions about privacy: see <a href="https://kruxsys.com/">kruxsys.com</a> or open an issue on
+          <a href="https://github.com/KruxSYS/plexdio">GitHub</a>.</p>
+      </div>
+    </section>

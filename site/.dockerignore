@@ -1,0 +1,6 @@
+# Build context for site/Dockerfile: only what the Dockerfile copies is sent.
+*
+!pages/
+!static/
+!tools/render.py
+!nginx/

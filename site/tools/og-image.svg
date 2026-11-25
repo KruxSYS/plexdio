@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- Social preview card (og:image), in the layout of Screvia's. Rendered by site/tools/make-images.sh.
+       The mark is a copy of assets/brand/plexdio.svg: keep the two in sync. -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#07090c"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect x="60" y="60" width="1080" height="510" fill="#0c1016" stroke="#1a212c" stroke-width="2"/>
+  <path d="M60 96V60h36M1104 570h36v-36" fill="none" stroke="#22d3ee" stroke-width="4"/>
+  <g transform="translate(120 195) scale(3.75)">
+    <rect x="3" y="3" width="58" height="58" fill="#0c1016" stroke="#2a3442" stroke-width="2"/>
+    <path d="M3 19V3h16M45 61h16V45" fill="none" stroke="#22d3ee" stroke-width="3"/>
+    <path d="M19 16v32l27-16z" fill="none" stroke="#e8ecf2" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="4"/>
+    <rect x="25" y="28.5" width="7" height="7" fill="#22d3ee"/>
+  </g>
+  <text x="420" y="168" font-family="DejaVu Sans Mono, monospace" font-size="24" fill="#8e9bb0" letter-spacing="2">KRUXSYS / PROJECTS / MOD/03</text>
+  <text x="414" y="330" font-family="DejaVu Sans, sans-serif" font-weight="bold" font-size="112" fill="#e8ecf2" letter-spacing="-3">Plexdio</text>
+  <text x="420" y="398" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#c9d1dd">A small, native Windows music player</text>
+  <text x="420" y="444" font-family="DejaVu Sans, sans-serif" font-size="30" fill="#c9d1dd">for Plex. No Electron, no runtime.</text>
+  <text x="420" y="520" font-family="DejaVu Sans Mono, monospace" font-size="26" fill="#22d3ee">plexdio.kruxsys.com</text>
+  <text x="1080" y="520" text-anchor="end" font-family="DejaVu Sans, sans-serif" font-size="26" fill="#8e9bb0">by <tspan font-weight="bold" fill="#e8ecf2">Krux</tspan><tspan font-family="DejaVu Sans Mono, monospace" fill="#22d3ee">SYS</tspan></text>
+</svg>

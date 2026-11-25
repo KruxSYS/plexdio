@@ -1,0 +1,14 @@
+# Compose builds use ./site as the context (with its own whitelist .dockerignore). This guards a build from the
+# repository root: the workspace target/ alone is tens of GB.
+.git
+target/
+dist/
+releases/
+crates/
+assets/models
+docs/
+tools/
+installer/
+analysis/
+.env
+.serena/

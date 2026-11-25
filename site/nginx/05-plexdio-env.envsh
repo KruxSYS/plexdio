@@ -1,0 +1,15 @@
+#!/bin/sh
+# Sourced (not executed) by the nginx image's entrypoint before 20-envsubst-on-templates.sh renders
+# /etc/nginx/templates/*.template. Turns the .env settings into checked PLEXDIO_* values (only those are
+# substituted: NGINX_ENVSUBST_FILTER), so a typo can't break the config.
+
+case "${DOWNLOAD_MAX_AGE:-}" in ''|*[!0-9]*) DOWNLOAD_MAX_AGE=31536000 ;; esac
+case "${MANIFEST_CACHE_CONTROL:-}" in
+  no-cache|no-store|"max-age="[0-9]*|"public, max-age="[0-9]*) ;;
+  *) MANIFEST_CACHE_CONTROL=no-cache ;;
+esac
+case "${MANIFEST_CACHE_CONTROL}" in *[!a-z0-9=,\ -]*) MANIFEST_CACHE_CONTROL=no-cache ;; esac
+
+export PLEXDIO_DOWNLOAD_MAX_AGE="$DOWNLOAD_MAX_AGE"
+export PLEXDIO_MANIFEST_CACHE_CONTROL="$MANIFEST_CACHE_CONTROL"
+echo "plexdio: manifest Cache-Control \"$PLEXDIO_MANIFEST_CACHE_CONTROL\", downloads max-age $PLEXDIO_DOWNLOAD_MAX_AGE"

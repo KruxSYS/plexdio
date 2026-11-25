@@ -1,0 +1,51 @@
+---
+# Plexdio website, downloads and update manifests
+# (https://plexdio.kruxsys.com). ai-pipe publishes the entry service
+# (web:8080); no host ports are published here. Settings come from .env
+# (see .env.example). Published releases live in the named volume
+# plexdio-releases, written by ./build.sh publish (README, "Releasing").
+
+services:
+  web:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+    image: plexdio-site:local
+    restart: unless-stopped
+    environment:
+      MANIFEST_CACHE_CONTROL: ${MANIFEST_CACHE_CONTROL:-no-cache}
+      DOWNLOAD_MAX_AGE: ${DOWNLOAD_MAX_AGE:-31536000}
+    volumes:
+      - plexdio-releases:/srv/releases:ro
+    # Read-only root; nginx renders its config into conf.d and keeps its pid
+    # and temp files in /tmp, both in memory.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://127.0.0.1:8080/healthz
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  # Published releases: downloads/<ver>/, api/releases.json and
+  # updates/<channel>/<arch>.json.
+  plexdio-releases:

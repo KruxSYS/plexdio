@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Plexdio">
+  <!-- Plexdio mark, KruxSYS style (see docs/brand.md). Master for every icon size from 32 px up;
+       the 16 and 24 px frames use plexdio-16.svg / plexdio-24.svg. Rendered by tools/make_icons.py. -->
+  <rect x="3" y="3" width="58" height="58" fill="#0c1016" stroke="#2a3442" stroke-width="2"/>
+  <path d="M3 19V3h16M45 61h16V45" fill="none" stroke="#22d3ee" stroke-width="3"/>
+  <path d="M19 16v32l27-16z" fill="none" stroke="#e8ecf2" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="4"/>
+  <rect x="25" y="28.5" width="7" height="7" fill="#22d3ee"/>
+</svg>

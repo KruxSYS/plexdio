@@ -1,0 +1,138 @@
+<!-- title: Plexdio docs: install, updates, data and uninstall -->
+<!-- description: Installing Plexdio (installer or portable zip), signing in, updates, where your data lives, backups, uninstalling and keyboard shortcuts. -->
+    <section class="page-head">
+      <div class="container">
+        <h1>Documentation</h1>
+        <p>Installing, signing in, updates, where Plexdio keeps your data, and how to remove it.</p>
+      </div>
+    </section>
+    <section>
+      <div class="container docs-layout">
+        <nav class="toc" aria-label="On this page">
+          <ul>
+            <li><a href="#install">Install</a></li>
+            <li><a href="#portable">Installer or portable</a></li>
+            <li><a href="#sign-in">First sign-in</a></li>
+            <li><a href="#updates">Updates</a></li>
+            <li><a href="#data">Data and backup</a></li>
+            <li><a href="#uninstall">Uninstall</a></li>
+            <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+        <div class="prose">
+          <h2 id="install">Install</h2>
+          <p>Get Plexdio from the <a href="/download">download page</a>. You need Windows 10 or 11 on a 64-bit (x64) PC.</p>
+          <ul>
+            <li><strong>Installer</strong> (<code>Plexdio-&lt;version&gt;-win-x64-setup.exe</code>): run it and follow the steps. It
+              installs for your Windows user only, into <code>%LOCALAPPDATA%\Programs\Plexdio</code>, and needs no administrator
+              rights. Started as an administrator, it also offers to install for all users (into Program Files). It adds a Start
+              menu shortcut, an optional desktop shortcut and an entry in <em>Settings → Apps</em>.</li>
+            <li><strong>Portable zip</strong> (<code>Plexdio-&lt;version&gt;-win-x64-portable.zip</code>): unzip it anywhere (a
+              folder in your documents, a USB stick) and start <code>Plexdio\plexdio.exe</code>.</li>
+          </ul>
+          <p>The files are not code-signed. If Windows shows “Windows protected your PC”, compare the file's SHA-256 with the one on
+            the download page (PowerShell: <code>Get-FileHash .\file -Algorithm SHA256</code>), then choose <em>More info → Run
+            anyway</em>.</p>
+
+          <h2 id="portable">Installer or portable?</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col"></th><th scope="col">Installer</th><th scope="col">Portable zip</th></tr></thead>
+            <tbody>
+              <tr><td>Program</td><td><code>%LOCALAPPDATA%\Programs\Plexdio</code></td><td>Any folder you choose</td></tr>
+              <tr><td>Settings, cache, logs</td><td>Your Windows profile (see <a href="#data">Data</a>)</td><td><code>Data\</code> next to <code>plexdio.exe</code></td></tr>
+              <tr><td>Start menu, uninstaller</td><td>Yes</td><td>No</td></tr>
+              <tr><td>Updates</td><td>Runs the new installer silently</td><td>Replaces <code>plexdio.exe</code> in its folder</td></tr>
+            </tbody>
+          </table></div>
+          <p>The portable zip holds a small file named <code>portable</code> next to <code>plexdio.exe</code>: that is what makes
+            Plexdio keep everything in <code>Data\</code>. Settings → About shows which kind of copy is running
+            (<em>Installed</em>, <em>Portable</em>, or <em>Standalone exe</em> for a bare <code>plexdio.exe</code> from an older
+            download, which uses your Windows profile like an installed copy).</p>
+
+          <h2 id="sign-in">First sign-in</h2>
+          <ol>
+            <li>Start Plexdio and choose <em>Sign in with Plex</em>. Your browser opens plex.tv with a code that is also shown in
+              the app. Sign in there and allow the app; your password never goes through Plexdio.</li>
+            <li>Pick a server and a music library. Plexdio tries every address of the server and uses the best one (local, then
+              remote, then relay).</li>
+            <li>The first sync copies the library into a local cache. After that, Plexdio opens the cached library at once and
+              syncs changes in the background.</li>
+          </ol>
+          <p>The Plex sign-in is stored in the Windows Credential Manager (as “Plexdio”), never in a settings file. <em>Sign
+            out</em> in Settings → Account removes it.</p>
+
+          <h2 id="updates">Updates</h2>
+          <p>Plexdio checks this website for a new version a few seconds after it starts and then at most once a day. When there
+            is one, a notice appears above the page and in <em>Settings → About</em>, with a link to the release notes.</p>
+          <ul>
+            <li><em>Update now</em> in an installed copy downloads the new installer, checks its SHA-256 against the update
+              information, runs it silently and starts the new version. Your settings stay where they are.</li>
+            <li><em>Update now</em> in a portable copy downloads the new zip, checks its SHA-256, replaces <code>plexdio.exe</code>
+              and restarts. <code>Data\</code> is not touched. If the folder is read-only, Plexdio offers the download page
+              instead.</li>
+            <li>A download that does not match its SHA-256 is deleted and nothing is installed.</li>
+          </ul>
+          <p><em>Check for updates</em> in Settings → About checks at once; <em>Automatically check for updates</em> turns the daily
+            check off. The <em>Beta</em> channel also offers preview versions. What the check sends is described on the
+            <a href="/privacy">privacy page</a>. If the check fails (no internet), nothing else is affected.</p>
+
+          <h2 id="data">Where your data lives, and backups</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">What</th><th scope="col">Installed (and standalone)</th><th scope="col">Portable</th></tr></thead>
+            <tbody>
+              <tr><td>Settings, saved queue</td><td><code>%APPDATA%\Plexdio</code></td><td><code>Data\config</code></td></tr>
+              <tr><td>Library cache, play history, Ride scores, artwork and audio cache, downloads, logs</td><td><code>%LOCALAPPDATA%\Plexdio</code></td><td><code>Data\cache</code></td></tr>
+              <tr><td>Plex sign-in</td><td colspan="2">Windows Credential Manager (“Plexdio”)</td></tr>
+            </tbody>
+          </table></div>
+          <p>To back up, quit Plexdio (tray icon → Quit) and copy <code>%APPDATA%\Plexdio</code> (settings) and, if you want your
+            play history, Ride scores and downloads too, <code>%LOCALAPPDATA%\Plexdio\db</code> and
+            <code>%LOCALAPPDATA%\Plexdio\offline</code>. A portable copy is backed up by copying its whole folder. Everything else in
+            the cache is downloaded again when needed. The sign-in is not part of a backup: just sign in again.</p>
+
+          <h2 id="uninstall">Uninstall</h2>
+          <ul>
+            <li><strong>Installed:</strong> <em>Settings → Apps → Installed apps → Plexdio → Uninstall</em> (or <em>Uninstall</em>
+              in the Start menu entry's menu). It removes the program and the start-with-Windows entry and keeps your settings
+              and cache. To remove those too, delete <code>%APPDATA%\Plexdio</code> and <code>%LOCALAPPDATA%\Plexdio</code>, and
+              the “Plexdio” entry in the Credential Manager (or sign out in Plexdio first).</li>
+            <li><strong>Portable:</strong> quit Plexdio and delete its folder. If you turned on <em>Start with Windows</em>, turn it
+              off first.</li>
+          </ul>
+
+          <h2 id="shortcuts">Keyboard shortcuts</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+            <tbody>
+              <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+              <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Seek 5 seconds</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Previous / next track</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></td><td>Volume</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Search</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>M</kbd></td><td>Mini-player</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd> / <kbd>−</kbd> / <kbd>0</kbd></td><td>Zoom in / out / 100 %</td></tr>
+              <tr><td><kbd>V</kbd>, <kbd>F11</kbd></td><td>Now playing page, full screen</td></tr>
+              <tr><td><kbd>G</kbd></td><td>Ride the song (on the Now playing page)</td></tr>
+            </tbody>
+          </table></div>
+
+          <h2 id="faq">FAQ</h2>
+          <details>
+            <summary>Does Plexdio work with Plexamp's features?</summary>
+            <p>It uses your own Plex server's API. Server-side features such as sonic similarity are used where the server offers
+              them; Plexamp-only features are not available.</p>
+          </details>
+          <details>
+            <summary>Has it been tested with a real Plex server?</summary>
+            <p>Not yet. Plexdio has been tested against its own mock Plex server under Wine and on a Windows 11 VM, and real audio
+              output has not been checked. Cast is experimental. Please report what you find.</p>
+          </details>
+          <details>
+            <summary>Can I move a portable copy?</summary>
+            <p>Yes. Quit Plexdio and move the whole folder, including <code>Data\</code>. The sign-in is in the Credential Manager,
+              so it moves with your Windows user, not with the folder.</p>
+          </details>
+        </div>
+      </div>
+    </section>
